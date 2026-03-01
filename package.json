@@ -1,0 +1,32 @@
+{
+  "name": "@nitrosend/sdk",
+  "version": "0.1.0",
+  "description": "Node.js/TypeScript SDK for the Nitrosend API",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "dev": "tsc --watch",
+    "prepare": "npm run build",
+    "generate:types": "openapi-typescript ../api/openapi.yaml -o src/generated.ts"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "openapi-typescript": "^7",
+    "typescript": "^5.6.0"
+  }
+}
