@@ -1,12 +1,20 @@
 # @nitrosend/sdk
 
-Node.js/TypeScript SDK for the [Nitrosend](https://nitrosend.com) API.
+Node.js/TypeScript SDK for the [Nitrosend](https://nitrosend.com) API — manage contacts, send campaigns, build automation flows, and track events programmatically.
+
+Fully typed. Zero dependencies. Node.js 18+.
 
 ## Installation
 
 ```bash
 npm install @nitrosend/sdk
 ```
+
+## Get your API key
+
+1. Log in at [nitrosend.com](https://nitrosend.com)
+2. Go to **Settings > API Keys**
+3. Copy your live key (starts with `nskey_live_`)
 
 ## Quick Start
 
@@ -21,7 +29,7 @@ const contact = await ns.contacts.create({
   firstName: 'Alice',
 });
 
-// Fire an event
+// Fire an event (triggers any matching flows)
 await ns.events.create({
   event: 'order_confirmed',
   contactEmail: 'alice@example.com',
@@ -54,16 +62,26 @@ await ns.campaigns.send(campaign.id);
 
 ## Pagination
 
+Paginated endpoints return data and pagination metadata:
+
 ```ts
+import { Nitrosend } from '@nitrosend/sdk';
+
+const ns = new Nitrosend('nskey_live_...');
 const result = await ns.contacts.list({ page: 1, limit: 25 });
+
 console.log(result.data);       // Contact[]
 console.log(result.pagination); // { page, totalPages, totalCount, nextPage, prevPage }
 ```
 
 ## Error Handling
 
+All errors are typed — use `instanceof` to handle specific cases:
+
 ```ts
 import { Nitrosend, ValidationError, NotFoundError } from '@nitrosend/sdk';
+
+const ns = new Nitrosend('nskey_live_...');
 
 try {
   await ns.contacts.create({ email: 'invalid' });
