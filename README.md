@@ -40,6 +40,14 @@ await ns.events.create({
 // Send a campaign
 const campaign = await ns.campaigns.create({ name: 'March Sale', channelType: 'email' });
 await ns.campaigns.send(campaign.id);
+
+// Send a transactional message (receipt, OTP, reset — no campaign needed)
+const msg = await ns.messages.send({
+  channel: 'email',
+  to: 'alice@example.com',
+  subject: 'Your order is confirmed',
+  body: 'Thanks for your order!',
+}, 'order-123-receipt'); // optional idempotency key
 ```
 
 ## Resources
@@ -57,6 +65,7 @@ await ns.campaigns.send(campaign.id);
 | `ns.segments` | `list`, `get`, `create`, `update`, `delete`, `count` |
 | `ns.lists` | `list`, `get`, `create`, `update`, `delete` |
 | `ns.keywords` | `list`, `get`, `create`, `update`, `delete` |
+| `ns.messages` | `list`\*, `get`, `send` |
 
 \* Paginated — returns `{ data, pagination }`.
 

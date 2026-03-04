@@ -228,6 +228,17 @@ export interface ContactList {
   updatedAt: string;
 }
 
+export interface Message {
+  id: number;
+  channel: 'email' | 'sms';
+  to: string;
+  subject: string | null;
+  status: 'queued' | 'sent' | 'failed';
+  providerId: string | null;
+  sentAt: string | null;
+  createdAt: string;
+}
+
 export interface Keyword {
   id: number;
   message: string | null;
@@ -379,6 +390,21 @@ export interface CreateKeyword {
 }
 
 export type UpdateKeyword = CreateKeyword;
+
+export interface CreateMessage {
+  channel: 'email' | 'sms';
+  to: string;
+  subject?: string;
+  body?: string;
+  templateId?: number;
+  data?: Record<string, unknown>;
+  idempotencyKey?: string;
+}
+
+export interface MessageListParams extends ListParams {
+  channel?: 'email' | 'sms';
+  status?: 'queued' | 'sent' | 'failed';
+}
 
 // =============================================================================
 // Query param types
