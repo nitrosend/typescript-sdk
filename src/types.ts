@@ -97,7 +97,7 @@ export interface Campaign {
   accountId: number;
   status: 'draft' | 'scheduled' | 'live' | 'paused' | 'completed' | 'cancelled' | 'archived';
   approvalState: 'pending_review' | 'approved' | 'rejected';
-  channelType: 'sms' | 'email';
+  channel: 'email' | 'sms';
   name: string | null;
   data: Record<string, unknown>;
   scheduledAt: string | null;
@@ -279,13 +279,13 @@ export type UpdateContact = CreateContact;
 
 export interface CreateCampaign {
   name?: string;
-  channelType?: 'sms' | 'email';
+  channel?: 'email' | 'sms';
 }
 
 export interface UpdateCampaign {
   name?: string;
   status?: string;
-  channelType?: 'sms' | 'email';
+  channel?: 'email' | 'sms';
   scheduledAt?: string;
   triggerAttributes?: Record<string, unknown>;
   templateAttributes?: Record<string, unknown>;
