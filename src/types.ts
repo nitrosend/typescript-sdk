@@ -440,7 +440,4 @@ export interface EventListParams extends ListParams {
   createdBefore?: string;
 }
 
-export interface DomainListParams {
-  page?: number;
-  per?: number;
-}
+export interface DomainListParams extends ListParams {}
