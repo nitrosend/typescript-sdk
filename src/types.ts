@@ -11,11 +11,6 @@ export interface Account {
   banner: string | null;
   comped: boolean;
   accountTier: string;
-  onboardingState: Record<string, unknown>;
-  onboarding: { steps: Record<string, unknown>; progress: number };
-  domainVerified: boolean;
-  canSend: boolean;
-  capabilities: Record<string, unknown>;
   spendCapMonthlyCents: number | null;
   emailBudgetUsed: number;
   emailBudgetLimit: number;
@@ -23,11 +18,7 @@ export interface Account {
   smsBudgetLimit: number;
   aiActionsUsed: number;
   aiActionsLimit: number;
-  emailFromName: string | null;
-  emailFromEmail: string | null;
-  emailReplyTo: string | null;
-  testEmailRecipients: string[];
-  brand: Brand | null;
+  brands: Brand[];
   createdAt: string;
   updatedAt: string;
 }
@@ -55,12 +46,24 @@ export interface Brand {
   links: Record<string, unknown>[];
   logo: string | null;
   complete: boolean;
+  emailFromName: string | null;
+  emailFromEmail: string | null;
+  emailReplyTo: string | null;
+  testEmailRecipients: string[];
+  onboardingState: Record<string, unknown>;
+  onboarding: { steps: Record<string, unknown>; progress: number };
+  domainVerified: boolean;
+  canSend: boolean;
+  usingSandbox: boolean;
+  sandboxEmail: string | null;
+  capabilities: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Contact {
   id: number;
+  brandId: number;
   uuid: string;
   firstName: string | null;
   lastName: string | null;
@@ -95,6 +98,7 @@ export interface Channel {
 export interface Campaign {
   id: number;
   accountId: number;
+  brandId: number;
   status: 'draft' | 'scheduled' | 'live' | 'paused' | 'completed' | 'cancelled' | 'archived';
   approvalState: 'pending_review' | 'approved' | 'rejected';
   channel: 'email' | 'sms';
@@ -112,6 +116,7 @@ export interface Campaign {
 export interface Flow {
   id: number;
   accountId: number;
+  brandId: number;
   status: 'draft' | 'live' | 'paused' | 'archived' | 'cancelled';
   approvalState: 'pending_review' | 'approved' | 'rejected';
   name: string | null;
@@ -172,6 +177,7 @@ export interface FlowTrigger {
 export interface Segment {
   id: number;
   accountId: number;
+  brandId: number;
   name: string | null;
   filters: Record<string, unknown>[];
   createdAt: string;
@@ -180,6 +186,7 @@ export interface Segment {
 
 export interface Domain {
   id: number;
+  brandId: number;
   name: string;
   provider: string;
   status: 'pending' | 'verified' | 'failed';
@@ -219,6 +226,7 @@ export interface Event {
 
 export interface ContactList {
   id: number;
+  brandId: number;
   name: string;
   contactsCount: number;
   segmentId: number | null;
@@ -230,6 +238,7 @@ export interface ContactList {
 
 export interface Message {
   id: number;
+  brandId: number;
   channel: 'email' | 'sms';
   to: string;
   subject: string | null;
@@ -258,10 +267,31 @@ export interface UpdateAccount {
   name?: string;
   bio?: string;
   website?: string;
+  avatar?: string;
+  banner?: string;
+}
+
+export interface CreateBrand {
+  companyName?: string;
+  brandColor?: string;
+  textColor?: string;
+  bgColor?: string;
+  fontHeading?: string;
+  fontBody?: string;
+  styleNotes?: string;
+  tone?: string;
+  companyDescription?: string;
+  industry?: string;
+  physicalAddress?: string;
   emailFromName?: string;
   emailFromEmail?: string;
   emailReplyTo?: string;
   testEmailRecipients?: string[];
+  exampleCopy?: string[];
+  links?: Record<string, unknown>[];
+  defaultHeader?: Record<string, unknown>;
+  defaultFooter?: Record<string, unknown>;
+  defaultTheme?: Record<string, unknown>;
 }
 
 export interface CreateContact {
@@ -337,6 +367,10 @@ export interface UpdateBrand {
   industry?: string;
   physicalAddress?: string;
   companyName?: string;
+  emailFromName?: string;
+  emailFromEmail?: string;
+  emailReplyTo?: string;
+  testEmailRecipients?: string[];
   exampleCopy?: string[];
   links?: Record<string, unknown>[];
   defaultHeader?: Record<string, unknown>;
