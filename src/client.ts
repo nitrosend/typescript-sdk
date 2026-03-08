@@ -43,7 +43,7 @@ export class NitrosendClient {
     const headers: Record<string, string> = {
       'Authorization': `Bearer ${this.apiKey}`,
       'Accept': 'application/json',
-      ...(this.brandId ? { 'X-Brand-Id': String(this.brandId) } : {}),
+      ...(this.brandId ? { 'X-Brand-SID': String(this.brandId) } : {}),
       ...options?.headers,
     };
 
