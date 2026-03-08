@@ -248,17 +248,6 @@ export interface Message {
   createdAt: string;
 }
 
-export interface Keyword {
-  id: number;
-  message: string | null;
-  action: string | null;
-  resourceType: string | null;
-  resourceId: number | null;
-  triggers: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
 // =============================================================================
 // Request types (from controller strong params)
 // =============================================================================
@@ -414,16 +403,6 @@ export interface CreateList {
 }
 
 export type UpdateList = CreateList;
-
-export interface CreateKeyword {
-  message?: string;
-  action?: string;
-  triggers?: string[];
-  resourceType?: string;
-  resourceId?: number;
-}
-
-export type UpdateKeyword = CreateKeyword;
 
 export interface CreateMessage {
   channel: 'email' | 'sms';

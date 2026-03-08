@@ -64,7 +64,6 @@ const msg = await ns.messages.send({
 | `ns.brand` | `get`, `update`, `scrape` |
 | `ns.segments` | `list`, `get`, `create`, `update`, `delete`, `count` |
 | `ns.lists` | `list`, `get`, `create`, `update`, `delete` |
-| `ns.keywords` | `list`, `get`, `create`, `update`, `delete` |
 | `ns.messages` | `list`\*, `get`, `send` |
 
 \* Paginated — returns `{ data, pagination }`.

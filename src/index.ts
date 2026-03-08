@@ -9,7 +9,6 @@ import { Domains } from './resources/domains.js';
 import { BrandResource } from './resources/brand.js';
 import { Segments } from './resources/segments.js';
 import { Lists } from './resources/lists.js';
-import { Keywords } from './resources/keywords.js';
 import { Messages } from './resources/messages.js';
 
 export { NitrosendError, BadRequestError, AuthenticationError, PaymentRequiredError, ForbiddenError, NotFoundError, ValidationError, RateLimitError } from './errors.js';
@@ -27,7 +26,6 @@ export class Nitrosend {
   readonly brands: BrandResource;
   readonly segments: Segments;
   readonly lists: Lists;
-  readonly keywords: Keywords;
   readonly messages: Messages;
 
   constructor(apiKeyOrOptions: string | ClientOptions) {
@@ -46,7 +44,6 @@ export class Nitrosend {
     this.brands = new BrandResource(client);
     this.segments = new Segments(client);
     this.lists = new Lists(client);
-    this.keywords = new Keywords(client);
     this.messages = new Messages(client);
   }
 }
