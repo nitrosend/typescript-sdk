@@ -190,6 +190,7 @@ export interface Domain {
   name: string;
   provider: string;
   status: 'pending' | 'verified' | 'failed';
+  dnsSetupStatus?: 'unchecked' | 'incomplete' | 'ready' | 'verified';
   dnsRecords: Record<string, unknown>[] | null;
   verifiedAt: string | null;
   createdAt: string;
