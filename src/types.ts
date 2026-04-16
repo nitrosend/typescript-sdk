@@ -54,6 +54,7 @@ export interface Brand {
   onboarding: { steps: Record<string, unknown>; progress: number };
   domainVerified: boolean;
   canSend: boolean;
+  subscribedContactsCount: number;
   usingSandbox: boolean;
   sandboxEmail: string | null;
   capabilities: Record<string, unknown>;
@@ -161,6 +162,7 @@ export interface TemplateSummary {
 export interface FlowTrigger {
   id: number;
   flowId: number;
+  audienceType: CampaignAudienceType | null;
   segmentId: number | null;
   resourceType: string | null;
   resourceId: number | null;
@@ -168,10 +170,22 @@ export interface FlowTrigger {
   event: string;
   data: Record<string, unknown>;
   contactListId: number | null;
+  contactListIds: number[];
   triggeredCount: number;
   lastTriggeredAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type CampaignAudienceType = 'lists' | 'segment' | 'all_contacts';
+
+export interface CampaignTriggerAttributes {
+  event?: string;
+  audience_type?: CampaignAudienceType | null;
+  contact_list_id?: number | null;
+  contact_list_ids?: number[];
+  segment_id?: number | null;
+  data?: Record<string, unknown>;
 }
 
 export interface Segment {
@@ -307,12 +321,13 @@ export interface UpdateCampaign {
   status?: string;
   channel?: 'email' | 'sms';
   scheduledAt?: string;
-  triggerAttributes?: Record<string, unknown>;
+  triggerAttributes?: CampaignTriggerAttributes;
   templateAttributes?: Record<string, unknown>;
 }
 
 export interface SendCampaign {
-  triggerAttributes?: Record<string, unknown>;
+  confirmSendToAll?: boolean;
+  triggerAttributes?: CampaignTriggerAttributes;
   templateAttributes?: Record<string, unknown>;
 }
 
