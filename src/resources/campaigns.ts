@@ -16,4 +16,9 @@ export class Campaigns extends Resource<Campaign, CreateCampaign, UpdateCampaign
     });
     return data;
   }
+
+  async duplicate(id: number): Promise<Campaign> {
+    const { data } = await this.client.request<Campaign>('POST', `${this.path}/${id}/duplicate`);
+    return data;
+  }
 }

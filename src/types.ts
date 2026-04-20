@@ -107,6 +107,7 @@ export interface Campaign {
   data: Record<string, unknown>;
   scheduledAt: string | null;
   sentCount: number;
+  editable: boolean;
   trigger: FlowTrigger;
   template: Template;
   templates: Template[];
