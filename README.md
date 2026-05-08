@@ -16,6 +16,44 @@ npm install @nitrosend/sdk
 2. Go to **Settings > API Keys**
 3. Copy your live key (starts with `nskey_live_`)
 
+## Server SDK vs. browser client
+
+**`@nitrosend/sdk`** is the server SDK. Use it from Node, edge functions, or
+any backend with your `nskey_live_…` secret key. It can read and modify your
+full account.
+
+**`@nitrosend/sdk/browser`** is the browser-safe public client. Use it in
+frontend code with a `wpkey_live_…` public key. It can create contacts and
+add them to lists you've allowed — and nothing else.
+
+Never ship a `nskey_live_…` secret key in browser code. The browser export
+will refuse to authenticate with one.
+
+### Server (secret key)
+
+```ts
+import { Nitrosend } from '@nitrosend/sdk';
+
+const ns = new Nitrosend('nskey_live_...');
+
+await ns.contacts.create({ email: 'alice@example.com', firstName: 'Alice' });
+```
+
+### Browser (public key)
+
+```ts
+import { createNitrosendPublicClient } from '@nitrosend/sdk/browser';
+
+const nitro = createNitrosendPublicClient({
+  publicKey: process.env.NEXT_PUBLIC_NITROSEND_KEY!,
+});
+
+await nitro.contacts.signup({
+  listId: 'list_…',
+  email: 'subscriber@example.com',
+});
+```
+
 ## Quick Start
 
 ```ts
