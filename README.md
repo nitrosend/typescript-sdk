@@ -4,6 +4,8 @@ Node.js/TypeScript SDK for the [Nitrosend](https://nitrosend.com) API — manage
 
 Fully typed. Zero dependencies. Node.js 18+.
 
+All plans, including free plans, have full access to Nitrosend MCP/API/CLI. API access and SDK usage are not restricted to paid plans; plan limits apply to usage volume and paid add-ons.
+
 ## Installation
 
 ```bash
