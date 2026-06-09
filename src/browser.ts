@@ -60,7 +60,7 @@ export function createNitrosendPublicClient(
 
   if (options.publicKey.indexOf(SECRET_PREFIX) === 0) {
     throw new NitrosendPublicError(
-      `Refusing to use a secret key (${SECRET_PREFIX}…) in browser code. Use the brand's public key (wpkey_live_…) instead.`,
+      `Refusing to use a secret key (${SECRET_PREFIX}…) in browser code. Use the client account's public key (wpkey_live_…) instead.`,
       0,
       'invalid_key',
     );
