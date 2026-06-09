@@ -18,13 +18,14 @@ export interface Account {
   smsBudgetLimit: number;
   aiActionsUsed: number;
   aiActionsLimit: number;
-  brands: Brand[];
+  clientAccounts: ClientAccount[];
   createdAt: string;
   updatedAt: string;
 }
 
-export interface Brand {
+export interface ClientAccount {
   id: number;
+  sid: string;
   accountId: number;
   brandColor: string | null;
   textColor: string | null;
@@ -64,7 +65,7 @@ export interface Brand {
 
 export interface Contact {
   id: number;
-  brandId: number;
+  clientAccountId: number;
   uuid: string;
   firstName: string | null;
   lastName: string | null;
@@ -99,7 +100,7 @@ export interface Channel {
 export interface Campaign {
   id: number;
   accountId: number;
-  brandId: number;
+  clientAccountId: number;
   status: 'draft' | 'scheduled' | 'live' | 'paused' | 'completed' | 'cancelled' | 'archived';
   approvalState: 'pending_review' | 'approved' | 'rejected';
   channel: 'email' | 'sms';
@@ -118,7 +119,7 @@ export interface Campaign {
 export interface Flow {
   id: number;
   accountId: number;
-  brandId: number;
+  clientAccountId: number;
   status: 'draft' | 'live' | 'paused' | 'archived' | 'cancelled';
   approvalState: 'pending_review' | 'approved' | 'rejected';
   name: string | null;
@@ -192,7 +193,7 @@ export interface CampaignTriggerAttributes {
 export interface Segment {
   id: number;
   accountId: number;
-  brandId: number;
+  clientAccountId: number;
   name: string | null;
   filters: Record<string, unknown>[];
   createdAt: string;
@@ -201,7 +202,7 @@ export interface Segment {
 
 export interface Domain {
   id: number;
-  brandId: number;
+  clientAccountId: number;
   name: string;
   provider: string;
   status: 'pending' | 'verified' | 'failed';
@@ -242,7 +243,7 @@ export interface Event {
 
 export interface ContactList {
   id: number;
-  brandId: number;
+  clientAccountId: number;
   name: string;
   contactsCount: number;
   segmentId: number | null;
@@ -254,7 +255,7 @@ export interface ContactList {
 
 export interface Message {
   id: number;
-  brandId: number;
+  clientAccountId: number;
   channel: 'email' | 'sms';
   to: string;
   subject: string | null;
@@ -276,7 +277,7 @@ export interface UpdateAccount {
   banner?: string;
 }
 
-export interface CreateBrand {
+export interface CreateClientAccount {
   companyName?: string;
   brandColor?: string;
   textColor?: string;
@@ -361,7 +362,7 @@ export interface PreviewParams {
   document: Record<string, unknown>;
 }
 
-export interface UpdateBrand {
+export interface UpdateClientAccount {
   brandColor?: string;
   textColor?: string;
   bgColor?: string;
