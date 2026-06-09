@@ -5,7 +5,7 @@ export interface ClientOptions {
   apiKey: string;
   baseUrl?: string;
   timeout?: number;
-  clientAccountSid?: string;
+  brandSid?: string;
 }
 
 export interface RequestOptions {
@@ -29,13 +29,13 @@ export class NitrosendClient {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly timeout: number;
-  private readonly clientAccountSid?: string;
+  private readonly brandSid?: string;
 
   constructor(options: ClientOptions) {
     this.apiKey = options.apiKey;
     this.baseUrl = (options.baseUrl ?? 'https://api.nitrosend.com').replace(/\/$/, '');
     this.timeout = options.timeout ?? 30_000;
-    this.clientAccountSid = options.clientAccountSid;
+    this.brandSid = options.brandSid;
   }
 
   async request<T>(method: string, path: string, options?: RequestOptions): Promise<ClientResponse<T>> {
@@ -43,7 +43,7 @@ export class NitrosendClient {
     const headers: Record<string, string> = {
       'Authorization': `Bearer ${this.apiKey}`,
       'Accept': 'application/json',
-      ...(this.clientAccountSid ? { 'X-Client-Account-SID': this.clientAccountSid } : {}),
+      ...(this.brandSid ? { 'X-Brand-SID': this.brandSid } : {}),
       ...options?.headers,
     };
 

@@ -101,7 +101,7 @@ const msg = await ns.messages.send({
 | `ns.templates` | `list`, `get`, `update`, `sendTest`, `preview`, `spec` |
 | `ns.events` | `list`\*, `get`, `create`, `delete` |
 | `ns.domains` | `list`\*, `get`, `create`, `verify`, `delete` |
-| `ns.clientAccounts` | `list`, `get`, `create`, `update`, `delete`, `scrape` |
+| `ns.brands` | `list`, `get`, `create`, `update`, `delete`, `scrape` |
 | `ns.segments` | `list`, `get`, `create`, `update`, `delete`, `count` |
 | `ns.lists` | `list`, `get`, `create`, `update`, `delete` |
 | `ns.messages` | `list`\*, `get`, `send` |

@@ -6,7 +6,7 @@ import { Flows } from './resources/flows.js';
 import { Templates } from './resources/templates.js';
 import { Events } from './resources/events.js';
 import { Domains } from './resources/domains.js';
-import { ClientAccountResource } from './resources/client-account.js';
+import { BrandResource } from './resources/brand.js';
 import { Segments } from './resources/segments.js';
 import { Lists } from './resources/lists.js';
 import { Messages } from './resources/messages.js';
@@ -23,7 +23,7 @@ export class Nitrosend {
   readonly templates: Templates;
   readonly events: Events;
   readonly domains: Domains;
-  readonly clientAccounts: ClientAccountResource;
+  readonly brands: BrandResource;
   readonly segments: Segments;
   readonly lists: Lists;
   readonly messages: Messages;
@@ -41,7 +41,7 @@ export class Nitrosend {
     this.templates = new Templates(client);
     this.events = new Events(client);
     this.domains = new Domains(client);
-    this.clientAccounts = new ClientAccountResource(client);
+    this.brands = new BrandResource(client);
     this.segments = new Segments(client);
     this.lists = new Lists(client);
     this.messages = new Messages(client);

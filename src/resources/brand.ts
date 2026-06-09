@@ -1,33 +1,33 @@
 import type { NitrosendClient } from '../client.js';
-import type { ClientAccount, CreateClientAccount, UpdateClientAccount } from '../types.js';
+import type { Brand, CreateBrand, UpdateBrand } from '../types.js';
 
-export class ClientAccountResource {
+export class BrandResource {
   private readonly client: NitrosendClient;
-  private readonly path = '/v1/my/client_accounts';
+  private readonly path = '/v1/my/brands';
 
   constructor(client: NitrosendClient) {
     this.client = client;
   }
 
-  async list(): Promise<ClientAccount[]> {
-    const { data } = await this.client.request<ClientAccount[]>('GET', this.path);
+  async list(): Promise<Brand[]> {
+    const { data } = await this.client.request<Brand[]>('GET', this.path);
     return data;
   }
 
-  async get(sid: string): Promise<ClientAccount> {
-    const { data } = await this.client.request<ClientAccount>('GET', `${this.path}/${sid}`);
+  async get(sid: string): Promise<Brand> {
+    const { data } = await this.client.request<Brand>('GET', `${this.path}/${sid}`);
     return data;
   }
 
-  async create(params: CreateClientAccount): Promise<ClientAccount> {
-    const { data } = await this.client.request<ClientAccount>('POST', this.path, {
+  async create(params: CreateBrand): Promise<Brand> {
+    const { data } = await this.client.request<Brand>('POST', this.path, {
       body: params as Record<string, unknown>,
     });
     return data;
   }
 
-  async update(sid: string, params: UpdateClientAccount): Promise<ClientAccount> {
-    const { data } = await this.client.request<ClientAccount>('PATCH', `${this.path}/${sid}`, {
+  async update(sid: string, params: UpdateBrand): Promise<Brand> {
+    const { data } = await this.client.request<Brand>('PATCH', `${this.path}/${sid}`, {
       body: params as Record<string, unknown>,
     });
     return data;
