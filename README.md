@@ -105,8 +105,34 @@ const msg = await ns.messages.send({
 | `ns.segments` | `list`, `get`, `create`, `update`, `delete`, `count` |
 | `ns.lists` | `list`, `get`, `create`, `update`, `delete` |
 | `ns.messages` | `list`\*, `get`, `send` |
+| `ns.images` | `ingest`, `createDirectUpload` |
 
 \* Paginated — returns `{ data, pagination }`.
+
+## Image Media Assets
+
+Images used in templates and campaigns should be stored as URLs, not inline
+base64. For public remote images, use the URL directly or call `ingest` with
+`imageUrl` when you want a Nitro-hosted copy. For local files, reserve a direct
+upload first, PUT the bytes to the returned upload URL with its headers, then
+ingest the returned `signedId`.
+
+```ts
+const upload = await ns.images.createDirectUpload({
+  blob: {
+    filename: 'hero.png',
+    byteSize: fileSize,
+    checksum: base64Md5,
+    contentType: 'image/png',
+  },
+});
+
+// PUT bytes to upload.directUpload.url with upload.directUpload.headers.
+
+const asset = await ns.images.ingest({ signedId: upload.signedId });
+
+console.log(asset.mediaUrl); // Use in image.src, product.image_url, logo_url, etc.
+```
 
 ## Pagination
 

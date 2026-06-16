@@ -313,7 +313,7 @@ export interface Import {
 }
 
 export interface DirectUploadCreate {
-  purpose?: 'import';
+  purpose?: 'import' | 'image' | 'media_asset';
   blob: {
     filename: string;
     byteSize: number;
@@ -332,6 +332,18 @@ export interface DirectUpload {
     url: string;
     headers?: Record<string, string>;
   };
+}
+
+export interface ImageAsset {
+  mediaKind: 'image';
+  mediaUrl: string;
+  imageUrl: string;
+  signedId: string;
+  filename: string;
+  contentType: string;
+  byteSize: number;
+  width: number | null;
+  height: number | null;
 }
 
 // =============================================================================
@@ -510,6 +522,14 @@ export interface CreateImport {
     listIds?: number[];
     [key: string]: unknown;
   } | string;
+}
+
+export interface IngestImage {
+  imageData?: string;
+  imageUrl?: string;
+  signedId?: string;
+  filename?: string;
+  contentType?: string;
 }
 
 export interface MessageListParams extends ListParams {
