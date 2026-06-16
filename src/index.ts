@@ -10,6 +10,7 @@ import { BrandResource } from './resources/brand.js';
 import { Segments } from './resources/segments.js';
 import { Lists } from './resources/lists.js';
 import { Messages } from './resources/messages.js';
+import { Imports } from './resources/imports.js';
 
 export { NitrosendError, BadRequestError, AuthenticationError, PaymentRequiredError, ForbiddenError, NotFoundError, ValidationError, RateLimitError } from './errors.js';
 export type { PaginatedResponse, PaginationMeta } from './pagination.js';
@@ -27,6 +28,7 @@ export class Nitrosend {
   readonly segments: Segments;
   readonly lists: Lists;
   readonly messages: Messages;
+  readonly imports: Imports;
 
   constructor(apiKeyOrOptions: string | ClientOptions) {
     const options = typeof apiKeyOrOptions === 'string'
@@ -45,5 +47,6 @@ export class Nitrosend {
     this.segments = new Segments(client);
     this.lists = new Lists(client);
     this.messages = new Messages(client);
+    this.imports = new Imports(client);
   }
 }

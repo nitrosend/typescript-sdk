@@ -265,6 +265,75 @@ export interface Message {
   createdAt: string;
 }
 
+export interface ImportGuardrail {
+  tier: 'auto' | 'hold_sends' | 'contact_us';
+  status: 'ok' | 'requires_review' | 'contact_sales';
+  contactUsCeiling: number;
+  sendsHeld: boolean;
+}
+
+export interface ImportPolicy {
+  maxFileSizeBytes: number;
+  maxFileSizeMb: number;
+  autoMaxRows: number;
+  contactUsMaxRows: number;
+  maxActiveImports: number;
+  createRateLimitPerMinute: number;
+  directUploadRateLimitPerMinute: number;
+}
+
+export interface ImportSpec {
+  resource: 'contacts';
+  parser: 'default';
+  ui: Record<string, unknown>;
+  requiredRules: Record<string, unknown>;
+  fields: Record<string, unknown>[];
+  guardrails: ImportPolicy;
+}
+
+export interface Import {
+  id: number;
+  resource: 'contacts';
+  parser: 'default';
+  status: 'pending' | 'processing' | 'failed' | 'canceled' | 'complete' | 'contact_us';
+  totalRows: number | null;
+  successRows: number | null;
+  failedRows: number | null;
+  rowsProcessed: number;
+  progressPct: number | null;
+  importErrors: unknown[][];
+  columns: Record<string, unknown> | null;
+  options: Record<string, unknown> | null;
+  assignedListIds: number[];
+  assignedLists: Array<{ id: number; name: string }>;
+  guardrail: ImportGuardrail;
+  startedAt: string | null;
+  endedAt: string | null;
+  createdAt: string;
+}
+
+export interface DirectUploadCreate {
+  purpose?: 'import';
+  blob: {
+    filename: string;
+    byteSize: number;
+    checksum: string;
+    contentType?: string;
+    metadata?: Record<string, unknown>;
+  };
+}
+
+export interface DirectUpload {
+  signedId: string;
+  filename?: string;
+  byteSize?: number;
+  contentType?: string | null;
+  directUpload: {
+    url: string;
+    headers?: Record<string, string>;
+  };
+}
+
 // =============================================================================
 // Request types (from controller strong params)
 // =============================================================================
@@ -432,9 +501,24 @@ export interface CreateMessage {
   idempotencyKey?: string;
 }
 
+export interface CreateImport {
+  signedId: string;
+  resource?: 'contacts';
+  parser?: 'default';
+  columns?: Record<string, string> | string;
+  options?: {
+    listIds?: number[];
+    [key: string]: unknown;
+  } | string;
+}
+
 export interface MessageListParams extends ListParams {
   channel?: 'email' | 'sms';
   status?: 'queued' | 'sent' | 'failed';
+}
+
+export interface ImportListParams extends ListParams {
+  resource?: 'contacts';
 }
 
 // =============================================================================
