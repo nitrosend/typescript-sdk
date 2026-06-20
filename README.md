@@ -14,8 +14,8 @@ npm install @nitrosend/sdk
 
 ## Get your API key
 
-1. Log in at [nitrosend.com](https://nitrosend.com)
-2. Go to **Settings > API Keys**
+1. Log in at [app.nitrosend.com](https://app.nitrosend.com)
+2. Go to **Brand > API Keys**
 3. Copy your live key (starts with `nskey_live_`)
 
 ## Server SDK vs. browser client
