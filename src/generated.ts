@@ -631,6 +631,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/my/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List export jobs */
+        get: operations["listExports"];
+        put?: never;
+        /**
+         * Start a contact export
+         * @description Enqueues an export job that builds a CSV of the brand's contacts and
+         *     attaches it to the export record. The same filters as `GET
+         *     /v1/my/contacts` are supported (`search`, `list_id`, `tag`). Custom
+         *     fields stored on contacts are emitted as additional CSV columns.
+         *
+         *     Poll `GET /v1/my/exports/{id}` until `ready` is `true`, then download
+         *     the file from the returned `download_path`.
+         */
+        post: operations["createExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/exports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Get an export job */
+        get: operations["getExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/exports/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Download a completed export file
+         * @description Returns the CSV file once the export status is `complete`.
+         */
+        get: operations["downloadExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/my/lists": {
         parameters: {
             query?: never;
@@ -914,7 +982,8 @@ export interface paths {
         /**
          * Duplicate a campaign
          * @description Creates a new draft campaign that copies the source's audience
-         *     (trigger.audience_type, contact_list_ids, segment_id) and template
+         *     (trigger.audience_type, contact_list_ids, segment_id,
+         *     exclude_segment_ids, exclude_contact_list_ids) and template
          *     content (design, subject, preheader, body, from_name, from_email,
          *     reply_to). Resets status to draft, approval_state to pending_review,
          *     scheduled_at to null, and trigger.event to manual. Works on any
@@ -2428,6 +2497,8 @@ export interface components {
             last_name?: string | null;
             source?: string | null;
             country_code?: string | null;
+            /** @description Unicode regional-indicator emoji pair derived from country_code (e.g. "🇦🇺"). Null when country_code is blank. */
+            flag_emoji?: string | null;
             /**
              * @description Custom key-value data. The reserved key `tags` holds an array of
              *     string labels used for segmentation and targeting. Reserved enrichment
@@ -2475,6 +2546,29 @@ export interface components {
             created_at?: string;
             /** Format: date-time */
             updated_at?: string;
+            /**
+             * @description Aggregated email engagement rollup for this contact. All fields are
+             *     nil-safe: when no rollup row exists yet, rating is "never", counts
+             *     are 0, rates and timestamps are null.
+             */
+            engagement?: {
+                /**
+                 * @description Five-tier engagement rating based on recency of opens and clicks.
+                 * @enum {string}
+                 */
+                rating?: "engaged" | "warm" | "cooling" | "dormant" | "never";
+                emails_sent?: number;
+                unique_opens?: number;
+                clicks?: number;
+                /** Format: float */
+                open_rate?: number | null;
+                /** Format: float */
+                click_rate?: number | null;
+                /** Format: date-time */
+                last_opened_at?: string | null;
+                /** Format: date-time */
+                last_clicked_at?: string | null;
+            } | null;
             channels?: components["schemas"]["ContactChannel"][];
         };
         ContactChannel: {
@@ -2651,8 +2745,19 @@ export interface components {
             total_rows?: number | null;
             success_rows?: number | null;
             failed_rows?: number | null;
-            rows_processed?: number;
-            progress_pct?: number | null;
+            /** @description Canonical live-progress block (the single progress representation). `pct` is the only percent source; a null `pct` means indeterminate. */
+            progress?: {
+                /** @enum {string} */
+                status?: "pending" | "running" | "complete" | "failed";
+                pct?: number | null;
+                stages?: {
+                    key?: string;
+                    label?: string;
+                    count?: number;
+                    /** @enum {string} */
+                    state?: "done" | "active" | "pending" | "failed";
+                }[];
+            };
             /** @description Row-level errors as `[line_number, message, source]`. */
             import_errors?: (number | string)[][];
             columns?: {
@@ -2667,6 +2772,27 @@ export interface components {
                 name?: string;
             }[];
             guardrail?: components["schemas"]["ImportGuardrail"];
+            /** Format: date-time */
+            started_at?: string | null;
+            /** Format: date-time */
+            ended_at?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        Export: {
+            id?: number;
+            /** @enum {string} */
+            resource?: "contacts";
+            /** @enum {string} */
+            format?: "csv";
+            /** @enum {string} */
+            status?: "pending" | "processing" | "complete" | "failed";
+            total_rows?: number | null;
+            error_message?: string | null;
+            /** @description True once the export is complete and the file is available. */
+            ready?: boolean;
+            /** @description Path to download the CSV; present only when `ready` is true. */
+            download_path?: string | null;
             /** Format: date-time */
             started_at?: string | null;
             /** Format: date-time */
@@ -2712,6 +2838,13 @@ export interface components {
             account_id?: number;
             brand_id?: number | null;
             name?: string;
+            /**
+             * @description Who owns this segment. `user` (default) — created and managed by the user;
+             *     `system` — curated by the platform (Champions, Loyal, At-Risk, Dormant, New).
+             *     System segments cannot be renamed or deleted via the API.
+             * @enum {string}
+             */
+            origin?: "user" | "system";
             filters?: components["schemas"]["SegmentFilters"];
             /** Format: date-time */
             created_at?: string;
@@ -2724,18 +2857,29 @@ export interface components {
              *     contact_phone_number, contact_email, contact_country,
              *     contact_subscribed_phone, contact_subscribed_email,
              *     contact_created_at, contact_last_interacted_at,
-             *     contact_source, contact_tag. Catalogued custom and enrichment
-             *     fields are exposed as contact_data_<path>, with dots replaced by
-             *     underscores (for example, data.attio.lifecycle_stage becomes
-             *     contact_data_attio_lifecycle_stage).
+             *     contact_source, contact_tag,
+             *     contact_engagement_rating, contact_last_opened_at,
+             *     contact_last_clicked_at, contact_unique_opens, contact_clicks,
+             *     contact_open_rate, contact_click_rate. Catalogued custom and
+             *     enrichment fields are exposed as contact_data_<path>, with dots
+             *     replaced by underscores (for example, data.attio.lifecycle_stage
+             *     becomes contact_data_attio_lifecycle_stage).
              */
             name: string;
             /**
              * @description Ransack predicate: eq, not_eq, cont, not_cont, start, end,
-             *     gt, lt, gteq, lteq, present, blank, true, false
+             *     gt, lt, gteq, lteq, present, blank, true, false, in, not_in,
+             *     within_days (relative rolling-window date predicate; value is an
+             *     integer number of days; resolved at query time as
+             *     column >= NOW() - value.days; supported for contact_created_at,
+             *     contact_last_interacted_at, contact_last_opened_at,
+             *     contact_last_clicked_at)
              */
             predicate: string;
-            /** @description Filter value — string, number, or boolean */
+            /**
+             * @description Filter value — string, number, boolean, or array of strings for
+             *     in/not_in predicates (e.g. ["engaged","warm"] for contact_engagement_rating in).
+             */
             value: unknown;
         }[];
         Campaign: {
@@ -3012,6 +3156,8 @@ export interface components {
             contact_list_ids?: number[];
             /** @description Segment IDs whose matching contacts are excluded from the recipient set */
             exclude_segment_ids?: number[];
+            /** @description Contact list IDs whose members are excluded from the recipient set */
+            exclude_contact_list_ids?: number[];
             data?: {
                 [key: string]: unknown;
             } | null;
@@ -4244,6 +4390,15 @@ export interface operations {
                  *     `contact_tag` filter and the `cont` predicate.
                  */
                 tag?: string;
+                /**
+                 * @description Column to sort by. `created_at` orders by the contact's creation date;
+                 *     the rest are the per-contact engagement rollup fields (see
+                 *     `Contact.engagement`). Contacts with no rollup row always sort last.
+                 *     Any unrecognised value falls back to the default newest-first order.
+                 */
+                sort?: "created_at" | "emails_sent" | "unique_opens" | "clicks" | "open_rate" | "click_rate" | "last_opened_at" | "last_clicked_at" | "rating";
+                /** @description Sort direction. Only applies when `sort` is set. */
+                direction?: "asc" | "desc";
             };
             header?: never;
             path?: never;
@@ -4812,6 +4967,126 @@ export interface operations {
             };
             404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationError"];
+        };
+    };
+    listExports: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                limit?: components["parameters"]["LimitParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated export jobs */
+            200: {
+                headers: {
+                    "X-Total-Count"?: number;
+                    "X-Total-Pages"?: number;
+                    "X-Page-Number"?: number;
+                    "X-Next-Page"?: number;
+                    "X-Prev-Page"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Export"][];
+                };
+            };
+        };
+    };
+    createExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @default contacts
+                     * @enum {string}
+                     */
+                    resource?: "contacts";
+                    /** @description Free-text filter, matching the contacts list search. */
+                    search?: string;
+                    /** @description Restrict the export to contacts in this list. */
+                    list_id?: number;
+                    /** @description Restrict the export to contacts with this tag. */
+                    tag?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Export queued */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Export"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Export job */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Export"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    downloadExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            404: components["responses"]["NotFound"];
+            /** @description Export is not ready */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     listLists: {
@@ -5439,6 +5714,8 @@ export interface operations {
                         segment_id?: number | null;
                         /** @description Segment IDs whose matching contacts are excluded; pass [] to clear */
                         exclude_segment_ids?: number[];
+                        /** @description Contact list IDs whose members are excluded; pass [] to clear */
+                        exclude_contact_list_ids?: number[];
                         data?: {
                             [key: string]: unknown;
                         };
@@ -5630,6 +5907,8 @@ export interface operations {
                         segment_id?: number | null;
                         /** @description Segment IDs whose matching contacts are excluded; pass [] to clear */
                         exclude_segment_ids?: number[];
+                        /** @description Contact list IDs whose members are excluded; pass [] to clear */
+                        exclude_contact_list_ids?: number[];
                         data?: {
                             [key: string]: unknown;
                         };
