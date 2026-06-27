@@ -451,6 +451,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/my/contacts/{id}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Unified activity timeline for a contact
+         * @description Read-only, keyset-paginated feed merging the contact's lifecycle
+         *     `events` and email `activities` into one chronological stream (newest
+         *     first). Entries are normalised and whitelisted — raw rows are never
+         *     exposed. Page using the `cursor` returned as `next_cursor`.
+         */
+        get: operations["getContactTimeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/my/contacts/fields": {
         parameters: {
             query?: never;
@@ -837,6 +860,28 @@ export interface paths {
          *     without creating or saving a segment.
          */
         post: operations["countSegment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/segments/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview contacts matching filters
+         * @description Preview a prospective segment without saving it. Returns a live count,
+         *     a bounded contact sample, and bounded overlap with existing segments.
+         *     Invalid filters fail closed with `invalid_filter`.
+         */
+        post: operations["previewSegment"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1335,8 +1380,10 @@ export interface paths {
         /**
          * Get the flow step type schema
          * @description Returns the schema for flow step types, trigger events, and
-         *     segment filters. Sourced from `config/flows.yml`, with
-         *     `lifecycle_flows` added from the canonical lifecycle catalog.
+         *     audience filters. Flow steps and triggers are sourced from
+         *     `config/flows.yml`; filters are sourced from the audience filter
+         *     registry with `lifecycle_flows` added from the canonical lifecycle
+         *     catalog.
          */
         get: operations["getFlowSpec"];
         put?: never;
@@ -1409,6 +1456,26 @@ export interface paths {
          *     event type + idempotency key) return the existing event.
          */
         post: operations["createEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/events/names": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List event names for filter autocomplete
+         * @description Returns known platform event names plus observed event names for the current brand.
+         */
+        get: operations["listEventNames"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2089,6 +2156,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description One normalised, whitelisted entry in a contact's unified timeline. */
+        TimelineEntry: {
+            /** @description Stable composite id, e.g. "event-123". */
+            id: string;
+            /** @enum {string} */
+            kind: "event" | "activity" | "lifecycle";
+            /** @description Event/activity name, e.g. checkout, opened. */
+            type: string;
+            /** @description Human-readable label for the entry. */
+            title: string;
+            /** Format: date-time */
+            occurred_at: string;
+            /** @description Display-only extras (e.g. amount, resource_name). No internal fields. */
+            meta: {
+                [key: string]: unknown;
+            };
+        };
         Error: {
             code: number;
             message: string;
@@ -2388,6 +2472,15 @@ export interface components {
             };
             domain_verified?: boolean;
             can_send?: boolean;
+            /** @description Warns when the brand has connected its own (BYO) email provider but verified sending domains still route through nitrosend's shared managed pool. Read-only; never blocks a send. `mismatch` is false (and `message` null) when all is well. */
+            byo_routing?: {
+                mismatch?: boolean;
+                /** @description The connected BYO provider, e.g. ses. */
+                provider?: string | null;
+                /** @description Verified domains still sending through the shared managed pool. */
+                bypassing_domains?: string[];
+                message?: string | null;
+            };
             /** @description Count of subscribed contacts in this brand. */
             subscribed_contacts_count?: number;
             using_sandbox?: boolean;
@@ -2788,11 +2881,32 @@ export interface components {
             /** @enum {string} */
             status?: "pending" | "processing" | "complete" | "failed";
             total_rows?: number | null;
+            /** @description Rows written so far; the live numerator against total_rows. */
+            rows_written?: number;
             error_message?: string | null;
             /** @description True once the export is complete and the file is available. */
             ready?: boolean;
             /** @description Path to download the CSV; present only when `ready` is true. */
             download_path?: string | null;
+            /**
+             * @description Live job-progress block, updated as the export streams. `status`
+             *     normalizes the job lifecycle, `pct` is the completion percentage
+             *     (null while the row count is still unknown), and `stages` is the
+             *     ordered Queued to Building to Ready funnel.
+             */
+            progress?: {
+                /** @enum {string} */
+                status?: "pending" | "running" | "complete" | "failed";
+                /** @description Completion percentage, or null when indeterminate. */
+                pct?: number | null;
+                stages?: {
+                    key?: string;
+                    label?: string;
+                    count?: number | null;
+                    /** @enum {string} */
+                    state?: "done" | "active" | "pending" | "failed";
+                }[];
+            };
             /** Format: date-time */
             started_at?: string | null;
             /** Format: date-time */
@@ -2807,7 +2921,7 @@ export interface components {
             name?: string;
             /** @enum {string} */
             visibility?: "private" | "shared";
-            filters?: components["schemas"]["SegmentFilters"];
+            filters?: components["schemas"]["SegmentFilterExpression"];
             layout?: components["schemas"]["SavedViewLayout"];
             /** @description True when the current user is the creator of this view */
             owner?: boolean;
@@ -2840,27 +2954,87 @@ export interface components {
             name?: string;
             /**
              * @description Who owns this segment. `user` (default) — created and managed by the user;
-             *     `system` — curated by the platform (Champions, Loyal, At-Risk, Dormant, New).
+             *     `system` — curated by the platform (Champions, Loyal, At-Risk, Dormant, New,
+             *     Suppressed, Recently unsubscribed, Bounced).
              *     System segments cannot be renamed or deleted via the API.
              * @enum {string}
              */
             origin?: "user" | "system";
-            filters?: components["schemas"]["SegmentFilters"];
+            filters?: components["schemas"]["SegmentFilterExpression"];
+            /** @description Last asynchronously refreshed contact count for this segment. */
+            cached_count?: number | null;
+            /**
+             * Format: date-time
+             * @description When `cached_count` was last refreshed.
+             */
+            count_computed_at?: string | null;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
             updated_at?: string;
         };
-        SegmentFilters: {
+        /**
+         * @description Request-side audience filter grammar. Use a flat array for ordinary
+         *     AND filters, `{ "operator": "and", "children": [...] }` for the legacy
+         *     expression wrapper, or `{ "op": "and"|"or"|"not", "conditions": [...] }`
+         *     for nested boolean logic. NOT groups must contain exactly one condition.
+         */
+        SegmentFilterExpression: components["schemas"]["SegmentFilters"] | components["schemas"]["FlatAndSegmentFilterExpression"] | components["schemas"]["BooleanSegmentFilterGroup"];
+        FlatAndSegmentFilterExpression: {
+            /** @enum {string} */
+            operator: "and";
             /**
-             * @description Filter name from flows.yml: contact_first_name, contact_last_name,
+             * @description Legacy flat-AND wrapper does not carry NOT; use BooleanSegmentFilterGroup for NOT.
+             * @default false
+             * @enum {boolean}
+             */
+            not: false;
+            children: components["schemas"]["SegmentFilters"];
+        };
+        SegmentFilterNode: components["schemas"]["AttributeSegmentFilter"] | components["schemas"]["EventSegmentFilter"] | components["schemas"]["BooleanSegmentFilterGroup"];
+        BooleanSegmentFilterGroup: {
+            /** @enum {string} */
+            op: "and" | "or" | "not";
+            /** @description Nested filter nodes. NOT groups must contain exactly one condition. */
+            conditions: components["schemas"]["SegmentFilterNode"][];
+        };
+        /**
+         * @description Segment filters are validated fail-closed. Unknown filter names,
+         *     globally invalid predicates, type-incompatible predicates, bad date
+         *     values, invalid enum values, and unsupported rolling-window filters
+         *     return a 422 `invalid_filter` error instead of silently widening an
+         *     audience.
+         */
+        SegmentFilters: (components["schemas"]["AttributeSegmentFilter"] | components["schemas"]["EventSegmentFilter"])[];
+        SegmentPreview: {
+            /** @description Live count of contacts matching the supplied filters. */
+            count?: number;
+            /** @description Bounded contact sample for quick verification. */
+            sample?: {
+                id?: number;
+                email?: string | null;
+                name?: string | null;
+            }[];
+            /** @description Bounded overlap with existing segments. */
+            overlap?: {
+                segment_id?: number;
+                name?: string;
+                overlap_count?: number;
+            }[];
+        };
+        AttributeSegmentFilter: {
+            /**
+             * @description Filter name from `nitro://schema`: contact_first_name, contact_last_name,
              *     contact_phone_number, contact_email, contact_country,
              *     contact_subscribed_phone, contact_subscribed_email,
              *     contact_created_at, contact_last_interacted_at,
              *     contact_source, contact_tag,
-             *     contact_engagement_rating, contact_last_opened_at,
+             *     contact_engagement_rating, contact_emails_sent, contact_last_opened_at,
              *     contact_last_clicked_at, contact_unique_opens, contact_clicks,
-             *     contact_open_rate, contact_click_rate. Catalogued custom and
+             *     contact_open_rate, contact_click_rate, contact_suppressed,
+             *     contact_suppression_reason, contact_bounced, contact_complained,
+             *     contact_soft_bounce_count, contact_unsubscribed_at, contact_list.
+             *     Catalogued custom and
              *     enrichment fields are exposed as contact_data_<path>, with dots
              *     replaced by underscores (for example, data.attio.lifecycle_stage
              *     becomes contact_data_attio_lifecycle_stage).
@@ -2869,19 +3043,40 @@ export interface components {
             /**
              * @description Ransack predicate: eq, not_eq, cont, not_cont, start, end,
              *     gt, lt, gteq, lteq, present, blank, true, false, in, not_in,
-             *     within_days (relative rolling-window date predicate; value is an
-             *     integer number of days; resolved at query time as
-             *     column >= NOW() - value.days; supported for contact_created_at,
-             *     contact_last_interacted_at, contact_last_opened_at,
-             *     contact_last_clicked_at)
+             *     within_days, not_within_days. Read `/v1/my/flows/spec` or
+             *     `nitro://schema` for the predicates allowed by each filter type.
              */
             predicate: string;
             /**
-             * @description Filter value — string, number, boolean, or array of strings for
-             *     in/not_in predicates (e.g. ["engaged","warm"] for contact_engagement_rating in).
+             * @description Filter value — string, number, boolean, array of strings for
+             *     in/not_in predicates (e.g. ["engaged","warm"] for
+             *     contact_engagement_rating in), or array of list ids for contact_list.
              */
             value: unknown;
-        }[];
+        };
+        EventSegmentFilter: {
+            /** @enum {string} */
+            type: "event";
+            /** @description Custom or known event name, e.g. first_send, project_created, checkout. */
+            event: string;
+            /** @enum {string} */
+            predicate: "performed" | "not_performed" | "count_at_least" | "count_at_most";
+            /** @description Required for count_at_least and count_at_most. */
+            value?: number;
+            /** @description Optional rolling event recency window. */
+            within_days?: number;
+            /**
+             * Format: date-time
+             * @description Optional absolute event recency cutoff.
+             */
+            since?: string;
+        } & ({
+            /** @enum {string} */
+            predicate: "performed" | "not_performed";
+        } | {
+            /** @enum {string} */
+            predicate: "count_at_least" | "count_at_most";
+        });
         Campaign: {
             id?: number;
             account_id?: number;
@@ -3222,11 +3417,7 @@ export interface components {
             /** @description Wait step: seconds */
             duration?: number;
             /** @description Split step: condition filters */
-            filters?: {
-                name?: string;
-                predicate?: string;
-                value?: unknown;
-            }[];
+            filters?: components["schemas"]["SegmentFilterExpression"];
             /** @description Split step: yes branch */
             yes?: components["schemas"]["FlowStepInput"][];
             /** @description Split step: no branch */
@@ -3553,6 +3744,16 @@ export interface components {
                 [key: string]: {
                     title?: string;
                     summary?: string;
+                    /** @enum {string} */
+                    type?: "string" | "number" | "boolean" | "date" | "enum" | "list" | "event";
+                    predicates?: string[];
+                    enum_values?: string[];
+                    event_name_source?: string;
+                    recency_options?: string[];
+                    /** @description Optional contacts index sort key backed by this filter. */
+                    sort_key?: string;
+                    /** @description Internal SQL column used for server-side sorting. */
+                    sort_column?: string;
                 };
             };
             triggers?: {
@@ -4381,13 +4582,19 @@ export interface operations {
                 limit?: number;
                 /** @description Full-text search across name, email, phone */
                 search?: string;
-                /** @description Filter contacts belonging to this list */
+                /**
+                 * @description Canonical structured audience filters from the registry exposed by
+                 *     `/v1/my/flows/spec` and `nitro://schema`. `search` remains a separate
+                 *     full-text lookup; filters are applied through the same fail-closed
+                 *     validator used for segments.
+                 */
+                filters?: components["schemas"]["SegmentFilterExpression"];
+                /** @description Legacy shortcut for a `contact_list in [id]` filter. */
                 list_id?: number;
                 /**
-                 * @description Filter contacts that have this tag. Tags are stored as an array of
-                 *     strings under `data.tags`. Only one `tag` filter is supported here;
-                 *     for more complex tag-based targeting, create a Segment with the
-                 *     `contact_tag` filter and the `cont` predicate.
+                 * @description Legacy shortcut for a `contact_tag eq tag` filter. Tags are stored
+                 *     as an array of strings under `data.tags`. For richer tag targeting,
+                 *     use canonical `filters`.
                  */
                 tag?: string;
                 /**
@@ -4649,6 +4856,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getContactTimeline: {
+        parameters: {
+            query?: {
+                /** @description Opaque keyset cursor from a prior `next_cursor`. */
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of timeline entries, newest first */
+            200: {
+                headers: {
+                    /** @description Present when more entries remain. */
+                    "X-Next-Cursor"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        entries?: components["schemas"]["TimelineEntry"][];
+                        next_cursor?: string | null;
+                    };
+                };
             };
             401: components["responses"]["Unauthorized"];
         };
@@ -5311,7 +5550,7 @@ export interface operations {
             content: {
                 "application/json": {
                     name: string;
-                    filters?: components["schemas"]["SegmentFilters"];
+                    filters?: components["schemas"]["SegmentFilterExpression"];
                 };
             };
         };
@@ -5386,7 +5625,7 @@ export interface operations {
             content: {
                 "application/json": {
                     name?: string;
-                    filters?: components["schemas"]["SegmentFilters"];
+                    filters?: components["schemas"]["SegmentFilterExpression"];
                 };
             };
         };
@@ -5413,7 +5652,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    filters?: components["schemas"]["SegmentFilters"];
+                    filters?: components["schemas"]["SegmentFilterExpression"];
                 };
             };
         };
@@ -5429,6 +5668,34 @@ export interface operations {
                     };
                 };
             };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    previewSegment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    filters?: components["schemas"]["SegmentFilterExpression"];
+                };
+            };
+        };
+        responses: {
+            /** @description Segment preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SegmentPreview"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
         };
     };
     listSavedViews: {
@@ -5477,7 +5744,7 @@ export interface operations {
                      * @enum {string}
                      */
                     visibility?: "private" | "shared";
-                    filters?: components["schemas"]["SegmentFilters"];
+                    filters?: components["schemas"]["SegmentFilterExpression"];
                     layout?: components["schemas"]["SavedViewLayout"];
                 };
             };
@@ -5534,7 +5801,7 @@ export interface operations {
                     name?: string;
                     /** @enum {string} */
                     visibility?: "private" | "shared";
-                    filters?: components["schemas"]["SegmentFilters"];
+                    filters?: components["schemas"]["SegmentFilterExpression"];
                     layout?: components["schemas"]["SavedViewLayout"];
                 };
             };
@@ -6654,6 +6921,28 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    listEventNames: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Event name suggestions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        names?: string[];
+                    };
+                };
+            };
         };
     };
     getEvent: {
