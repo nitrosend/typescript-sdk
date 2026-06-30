@@ -2058,6 +2058,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/my/suppressions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List suppressions
+         * @description Returns the authenticated account's current suppression records by
+         *     default, including bounded provider diagnostics when the source
+         *     feedback event is available.
+         */
+        get: operations["listSuppressions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/my/chat_sessions": {
         parameters: {
             query?: never;
@@ -3185,6 +3207,34 @@ export interface components {
             sent_at?: string | null;
             /** Format: date-time */
             created_at?: string;
+        };
+        /** @description Account suppression row with bounded source-event diagnostics. */
+        Suppression: {
+            id?: number;
+            /** Format: email */
+            email?: string;
+            /** @enum {string} */
+            reason?: "hard_bounce" | "soft_bounce" | "complaint" | "manual" | "admin";
+            /** @enum {string} */
+            scope?: "account_scoped";
+            active?: boolean;
+            contact_id?: number | null;
+            source_provider?: string | null;
+            source_event_id?: string | null;
+            /** @description Bounded diagnostic text extracted from the provider feedback event, when retained. */
+            provider_diagnostic?: string | null;
+            /** @enum {string|null} */
+            bounce_type?: "hard" | "soft" | null;
+            bounce_subtype?: string | null;
+            complaint_feedback_type?: string | null;
+            /** Format: date-time */
+            event_occurred_at?: string | null;
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
         };
         ChatMessage: {
             id?: number;
@@ -8210,6 +8260,43 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
+        };
+    };
+    listSuppressions: {
+        parameters: {
+            query?: {
+                /** @description Filter to a specific suppression ID */
+                id?: number;
+                /** @description Filter to a specific suppressed email address */
+                email?: string;
+                reason?: "hard_bounce" | "soft_bounce" | "complaint" | "manual" | "admin";
+                /** @description Filter by provider that emitted the source event */
+                source_provider?: string;
+                /** @description Defaults to true. Set false to list expired suppressions. */
+                active?: boolean;
+                page?: components["parameters"]["PageParam"];
+                limit?: components["parameters"]["LimitParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated list of suppressions */
+            200: {
+                headers: {
+                    "X-Total-Count"?: number;
+                    "X-Total-Pages"?: number;
+                    "X-Page-Number"?: number;
+                    "X-Next-Page"?: number;
+                    "X-Prev-Page"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Suppression"][];
+                };
+            };
         };
     };
     listChatSessions: {

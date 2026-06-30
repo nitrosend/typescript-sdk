@@ -265,6 +265,25 @@ export interface Message {
   createdAt: string;
 }
 
+export interface Suppression {
+  id: number;
+  email: string;
+  reason: 'hard_bounce' | 'soft_bounce' | 'complaint' | 'manual' | 'admin';
+  scope: 'account_scoped';
+  active: boolean;
+  contactId: number | null;
+  sourceProvider: string | null;
+  sourceEventId: string | null;
+  providerDiagnostic: string | null;
+  bounceType: 'hard' | 'soft' | null;
+  bounceSubtype: string | null;
+  complaintFeedbackType: string | null;
+  eventOccurredAt: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ImportGuardrail {
   tier: 'auto' | 'hold_sends' | 'contact_us';
   status: 'ok' | 'requires_review' | 'contact_sales';
@@ -535,6 +554,14 @@ export interface IngestImage {
 export interface MessageListParams extends ListParams {
   channel?: 'email' | 'sms';
   status?: 'queued' | 'sent' | 'failed';
+}
+
+export interface SuppressionListParams extends ListParams {
+  id?: number;
+  email?: string;
+  reason?: Suppression['reason'];
+  sourceProvider?: string;
+  active?: boolean;
 }
 
 export interface ImportListParams extends ListParams {

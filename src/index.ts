@@ -10,6 +10,7 @@ import { BrandResource } from './resources/brand.js';
 import { Segments } from './resources/segments.js';
 import { Lists } from './resources/lists.js';
 import { Messages } from './resources/messages.js';
+import { Suppressions } from './resources/suppressions.js';
 import { Imports } from './resources/imports.js';
 import { Images } from './resources/images.js';
 
@@ -29,6 +30,7 @@ export class Nitrosend {
   readonly segments: Segments;
   readonly lists: Lists;
   readonly messages: Messages;
+  readonly suppressions: Suppressions;
   readonly imports: Imports;
   readonly images: Images;
 
@@ -49,6 +51,7 @@ export class Nitrosend {
     this.segments = new Segments(client);
     this.lists = new Lists(client);
     this.messages = new Messages(client);
+    this.suppressions = new Suppressions(client);
     this.imports = new Imports(client);
     this.images = new Images(client);
   }
