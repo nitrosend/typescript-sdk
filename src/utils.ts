@@ -4,7 +4,7 @@ const PASS_THROUGH = new Set([
   'steps', 'trigger', 'columns', 'links', 'dns_records', 'onboarding_state',
   'audience', 'params', 'default_header', 'default_footer', 'default_theme',
   'example_copy', 'trigger_attributes', 'template_attributes', 'capabilities',
-  'onboarding',
+  'onboarding', 'headers', 'tags',
 ]);
 
 export function camelToSnake(str: string): string {

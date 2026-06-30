@@ -2003,8 +2003,8 @@ export interface paths {
         };
         /**
          * List messages
-         * @description Returns transactional messages by default. Use source_type=all to include
-         *     flow/campaign-generated messages, or source_type=flow for flow-only.
+         * @description Returns all messages by default. Use source_type to narrow to campaign,
+         *     flow, transactional, or test sends.
          */
         get: operations["listMessages"];
         put?: never;
@@ -2479,6 +2479,8 @@ export interface components {
             email_from_name?: string | null;
             email_from_email?: string | null;
             email_reply_to?: string | null;
+            /** @description Default-off brand setting that injects a campaign view-in-browser link when a verified tracking domain is available. */
+            email_view_online?: boolean;
             test_email_recipients?: string[];
             /** @description JSONB — keys are step names, values are completion metadata */
             onboarding_state?: {
@@ -3197,10 +3199,10 @@ export interface components {
             /** @description Source flow ID (null for transactional) */
             flow_id?: number | null;
             /**
-             * @description campaign, flow, or null (transactional)
+             * @description campaign, flow, test, or null (transactional)
              * @enum {string|null}
              */
-            source_type?: "campaign" | "flow" | null;
+            source_type?: "campaign" | "flow" | "test" | null;
             /** @description Name of source campaign or flow */
             source_name?: string | null;
             /** Format: date-time */
@@ -7725,6 +7727,7 @@ export interface operations {
                     email_from_email?: string;
                     /** Format: email */
                     email_reply_to?: string;
+                    email_view_online?: boolean;
                     test_email_recipients?: string[];
                     example_copy?: string[];
                     links?: {
@@ -8125,8 +8128,14 @@ export interface operations {
     listMessages: {
         parameters: {
             query?: {
-                /** @description Filter by source. Omit for transactional only, 'all' for everything, 'flow' for flow/campaign messages. */
-                source_type?: "all" | "flow";
+                /** @description Filter by source. Omit or use 'all' for everything. */
+                source_type?: "all" | "campaign" | "flow" | "transactional" | "test";
+                /** @description Filter to messages from a specific flow */
+                flow_id?: number;
+                /** @description Filter to messages from a specific campaign */
+                campaign_id?: number;
+                /** @description Filter to messages created on this date */
+                date?: string;
                 channel?: "email" | "sms";
                 status?: "queued" | "sent" | "failed";
                 page?: components["parameters"]["PageParam"];
@@ -8158,7 +8167,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Prevents duplicate sends on retry. Same key returns the original message. */
+                /** @description Prevents duplicate sends on retry. The same key with the same payload returns the original message; the same key with a different payload returns 409. */
                 "Idempotency-Key"?: string;
             };
             path?: never;
@@ -8179,6 +8188,24 @@ export interface operations {
                     html?: string;
                     /** @description Load email design from an existing template (email only) */
                     template_id?: number;
+                    /** @description Optional contact to personalize with when rendering a template */
+                    contact_id?: number;
+                    /** @description Verified sender email for this email message. May include a display name, for example "Acme <hello@example.com>". */
+                    from?: string;
+                    /** @description Verified sender email for this email message. Alias of `from`. */
+                    from_email?: string;
+                    /** @description Sender display name for this email message */
+                    from_name?: string;
+                    /** @description Reply-to email address for this email message */
+                    reply_to?: string;
+                    /** @description Provider headers for this email message. Structural and Nitrosend-reserved headers are rejected. */
+                    headers?: {
+                        [key: string]: string;
+                    };
+                    /** @description Provider tags for this email message. Nitrosend-reserved tag keys are rejected and system tags are always controlled by Nitrosend. */
+                    tags?: {
+                        [key: string]: string;
+                    };
                     /** @description Merge variables */
                     data?: {
                         [key: string]: unknown;
@@ -8189,6 +8216,15 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Existing message returned for idempotency replay */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
             /** @description Message created */
             201: {
                 headers: {
@@ -8196,6 +8232,23 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Idempotency key was already used with a different payload */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example 409 */
+                        code?: number;
+                        message?: string;
+                        /** @example true */
+                        error?: boolean;
+                        /** @example idempotency_conflict */
+                        error_code?: string;
+                    };
                 };
             };
             422: components["responses"]["ValidationError"];

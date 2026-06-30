@@ -14,11 +14,17 @@ export class Messages extends Resource<Message, CreateMessage> {
     return { data, pagination: parsePaginationHeaders(headers) };
   }
 
+  async create(params: CreateMessage): Promise<Message> {
+    return this.send(params);
+  }
+
   async send(params: CreateMessage, idempotencyKey?: string): Promise<Message> {
     const headers: Record<string, string> = {};
-    if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+    const { idempotencyKey: bodyIdempotencyKey, ...body } = params;
+    const key = idempotencyKey ?? bodyIdempotencyKey;
+    if (key) headers['Idempotency-Key'] = key;
     const { data } = await this.client.request<Message>('POST', this.path, {
-      body: params as unknown as Record<string, unknown>,
+      body: body as unknown as Record<string, unknown>,
       headers,
     });
     return data;

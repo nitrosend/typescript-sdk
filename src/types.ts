@@ -261,6 +261,9 @@ export interface Message {
   subject: string | null;
   status: 'queued' | 'sent' | 'failed';
   providerId: string | null;
+  flowId: number | null;
+  sourceType: 'campaign' | 'flow' | 'test' | null;
+  sourceName: string | null;
   sentAt: string | null;
   createdAt: string;
 }
@@ -527,7 +530,15 @@ export interface CreateMessage {
   to: string;
   subject?: string;
   body?: string;
+  html?: string;
   templateId?: number;
+  contactId?: number;
+  from?: string;
+  fromEmail?: string;
+  fromName?: string;
+  replyTo?: string;
+  headers?: Record<string, string>;
+  tags?: Record<string, string | number | boolean>;
   data?: Record<string, unknown>;
   idempotencyKey?: string;
 }
@@ -552,6 +563,10 @@ export interface IngestImage {
 }
 
 export interface MessageListParams extends ListParams {
+  sourceType?: 'all' | 'campaign' | 'flow' | 'transactional' | 'test';
+  flowId?: number;
+  campaignId?: number;
+  date?: string;
   channel?: 'email' | 'sms';
   status?: 'queued' | 'sent' | 'failed';
 }
