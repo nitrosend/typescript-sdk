@@ -264,6 +264,12 @@ export interface Message {
   flowId: number | null;
   sourceType: 'campaign' | 'flow' | 'test' | null;
   sourceName: string | null;
+  statusReasonCode: string | null;
+  statusReason: string | null;
+  statusReasonCategory: 'content_review' | 'account' | 'internal' | 'recipient' | 'provider' | 'rate_limit' | 'delivery' | null;
+  failureCode: string | null;
+  failureReason: string | null;
+  failureCategory: 'content_review' | 'account' | 'internal' | 'recipient' | 'provider' | 'delivery' | null;
   sentAt: string | null;
   createdAt: string;
 }

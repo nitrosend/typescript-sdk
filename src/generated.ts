@@ -1082,7 +1082,8 @@ export interface paths {
          * @description Polls the current campaign send using the same `Campaign::SendProgress`
          *     payload exposed on the campaign serializer. Active sends return
          *     `status: "sending"` with `poll_after_seconds`; terminal sends return
-         *     `status: "completed"`. Campaigns that have not started delivery return
+         *     `status: "completed"` or `status: "paused"` when a deliverability guard
+         *     stopped the active send. Campaigns that have not started delivery return
          *     `status: "not_started"`. Polling also refreshes server-side progress:
          *     queued reservations older than 15 minutes are marked failed before the
          *     response is returned, so `failed`/`pending` can change on a poll even
@@ -3166,7 +3167,7 @@ export interface components {
         CampaignDeliverySummary: {
             campaign_send_token: string | null;
             /** @enum {string} */
-            status: "sending" | "completed";
+            status: "sending" | "completed" | "paused";
             /** @description Recipient count captured for the active send. */
             recipients: number;
             sent: number;
@@ -3176,7 +3177,7 @@ export interface components {
         CampaignDeliveryProgress: {
             campaign_send_token: string | null;
             /** @enum {string} */
-            status: "not_started" | "sending" | "completed";
+            status: "not_started" | "sending" | "completed" | "paused";
             /** @description Recipient count captured for the active send. */
             recipients: number;
             sent: number;
@@ -3205,6 +3206,24 @@ export interface components {
             source_type?: "campaign" | "flow" | "test" | null;
             /** @description Name of source campaign or flow */
             source_name?: string | null;
+            /** @description Stable machine-readable reason for a queued or failed message status. */
+            status_reason_code?: string | null;
+            /** @description Human-readable explanation for a queued or failed message status. */
+            status_reason?: string | null;
+            /**
+             * @description Broad category for status_reason.
+             * @enum {string|null}
+             */
+            status_reason_category?: "content_review" | "account" | "internal" | "recipient" | "provider" | "rate_limit" | "delivery" | null;
+            /** @description Stable machine-readable failure reason; present only when status is failed. */
+            failure_code?: string | null;
+            /** @description Human-readable failure explanation; present only when status is failed. */
+            failure_reason?: string | null;
+            /**
+             * @description Broad category for failure_reason; present only when status is failed.
+             * @enum {string|null}
+             */
+            failure_category?: "content_review" | "account" | "internal" | "recipient" | "provider" | "delivery" | null;
             /** Format: date-time */
             sent_at?: string | null;
             /** Format: date-time */
@@ -3538,6 +3557,8 @@ export interface components {
             name?: string;
             /** @default ses */
             provider: string;
+            /** @description Domain Nitrosend will use for visible From addresses when this sending domain is selected. */
+            default_from_domain?: string;
             integration_id?: number | null;
             /** @enum {string} */
             status?: "pending" | "verified" | "failed";
@@ -3928,6 +3949,7 @@ export interface components {
         BrandSid: string;
         PageParam: number;
         LimitParam: number;
+        PerParam: number;
         /**
          * @description Optional brand context header. Pass the brand's `sid` to scope the
          *     request to a specific brand. If omitted, the account's default brand
