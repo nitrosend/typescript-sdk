@@ -200,12 +200,29 @@ export interface Segment {
   updatedAt: string;
 }
 
+export type SenderAuthorizationReason =
+  | 'missing_sender_domain'
+  | 'sandbox_domain'
+  | 'exact_inbox'
+  | 'shared_domain_requires_exact_inbox'
+  | 'shared_domain_not_verified'
+  | 'platform_domain'
+  | 'sender_domain_not_authorized'
+  | 'sending_domain'
+  | 'unaligned_apex_supported'
+  | 'author_identity_not_verified'
+  | 'author_domain_unaligned'
+  | 'author_domain'
+  | 'sender_domain_mismatch';
+
 export interface Domain {
   id: number;
   brandId: number;
   name: string;
   provider: string;
-  status: 'pending' | 'verified' | 'failed';
+  status: 'pending' | 'verified';
+  defaultFromDomain?: string;
+  senderAuthorizationReason?: SenderAuthorizationReason;
   dnsSetupStatus?: 'unchecked' | 'incomplete' | 'ready' | 'verified';
   dnsRecords: Record<string, unknown>[] | null;
   verifiedAt: string | null;

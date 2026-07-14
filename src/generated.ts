@@ -1748,8 +1748,12 @@ export interface paths {
         /**
          * Connect customer-data Stripe integration
          * @description Connects a customer's own Stripe account using a Restricted API Key and
-         *     a webhook signing secret for `/hooks/stripe_data`. This is isolated from
-         *     Nitrosend billing webhooks at `/hooks/stripe`.
+         *     Stripe data webhooks for `/hooks/stripe_data`. When the key can create
+         *     webhook endpoints, Nitrosend creates the endpoint and stores its returned
+         *     signing secret. Otherwise provide `signing_secret` manually. The key
+         *     needs read access for customers, subscriptions, invoices, charges and
+         *     refunds, plus write access for webhook endpoints for one-paste setup.
+         *     This is isolated from Nitrosend billing webhooks at `/hooks/stripe`.
          */
         post: operations["connectStripeIntegration"];
         delete?: never;
@@ -1814,6 +1818,47 @@ export interface paths {
          *     auth code, persists the integration, and enqueues initial sync.
          */
         get: operations["shopifyOauthCallback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/shopify/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open or resume the embedded Shopify app
+         * @description Verifies the Shopify App Bridge ID token in the Authorization header,
+         *     exchanges it for an offline Shopify access token when installation is
+         *     required, and provisions or resumes the Nitrosend account integration.
+         *     Subsequent embedded requests continue to authenticate with fresh
+         *     Shopify ID tokens.
+         */
+        post: operations["openShopifyEmbeddedSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/shopify/billing/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reconcile Shopify App Pricing after plan management */
+        get: operations["reconcileShopifyAppPricing"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2344,6 +2389,10 @@ export interface components {
             id?: number;
             plan_id?: number;
             plan_name?: string | null;
+            /** @enum {string|null} */
+            billing_provider?: "shopify" | "stripe" | "vercel" | null;
+            /** Format: uri */
+            manage_url?: string | null;
             /** @enum {string} */
             status?: "pending" | "active" | "inactive" | "canceled" | "free_tier";
             /** @enum {string} */
@@ -3147,6 +3196,7 @@ export interface components {
             /** @description Present while a campaign has a current send token; use `/delivery` to poll, refresh progress, and receive polling metadata. */
             delivery?: components["schemas"]["CampaignDeliverySummary"] | null;
             engagement?: components["schemas"]["Engagement"];
+            revenue?: components["schemas"]["RevenueReport"];
             /**
              * @description True when the campaign's content/audience/template can be edited.
              *     False for live, paused, completed, cancelled, archived, and for
@@ -3348,6 +3398,7 @@ export interface components {
             steps?: components["schemas"]["FlowStepOutput"][];
             sent_count?: number;
             engagement?: components["schemas"]["Engagement"];
+            revenue?: components["schemas"]["RevenueReport"];
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
@@ -3402,6 +3453,58 @@ export interface components {
         };
         Engagement: components["schemas"]["EngagementBucket"] & {
             account: components["schemas"]["EngagementBucket"];
+        };
+        RevenueMessageBreakdown: {
+            message_id?: number;
+            subject?: string | null;
+            /** Format: date-time */
+            sent_at?: string | null;
+            /** @description Dominant attributed order currency for this message row. */
+            currency?: string | null;
+            /** @description True when attributed orders included more than one currency before dominant-currency filtering. */
+            mixed_currency?: boolean;
+            delivered?: number;
+            attributed_orders?: number;
+            /** @description Net attributed revenue in cents from the orders ledger. */
+            attributed_revenue_cents?: number;
+            /** Format: float */
+            revenue_per_recipient?: number | null;
+            /** Format: float */
+            conversion_rate?: number | null;
+            /** Format: float */
+            attributed_aov?: number | null;
+        };
+        /**
+         * @description Attributed revenue from the orders ledger. This block is omitted when
+         *     the brand has no connected Shopify or Stripe revenue source.
+         */
+        RevenueReport: {
+            /** @example Attributed revenue. Last click, 7-day window. */
+            attribution_label?: string;
+            /** @description Dominant attributed order currency used for revenue math. Null when no attributed orders carry a currency. */
+            currency?: string | null;
+            /** @description True when attributed orders included more than one currency before dominant-currency filtering. */
+            mixed_currency?: boolean;
+            /** @description Net attributed revenue in cents from the orders ledger. */
+            attributed_revenue_cents?: number;
+            delivered?: number;
+            attributed_orders?: number;
+            /**
+             * Format: float
+             * @description Net attributed revenue in major currency units divided by delivered recipients.
+             */
+            revenue_per_recipient?: number | null;
+            /**
+             * Format: float
+             * @description Attributed paid orders divided by delivered recipients.
+             */
+            conversion_rate?: number | null;
+            /**
+             * Format: float
+             * @description Net attributed revenue in major currency units divided by attributed paid orders.
+             */
+            attributed_aov?: number | null;
+            message_breakdown?: components["schemas"]["RevenueMessageBreakdown"][];
         };
         FlowTrigger: {
             id?: number;
@@ -3559,9 +3662,14 @@ export interface components {
             provider: string;
             /** @description Domain Nitrosend will use for visible From addresses when this sending domain is selected. */
             default_from_domain?: string;
+            /**
+             * @description Machine-readable reason the default visible From domain is or is not authorized.
+             * @enum {string}
+             */
+            sender_authorization_reason?: "missing_sender_domain" | "sandbox_domain" | "exact_inbox" | "shared_domain_requires_exact_inbox" | "shared_domain_not_verified" | "platform_domain" | "sender_domain_not_authorized" | "sending_domain" | "unaligned_apex_supported" | "author_identity_not_verified" | "author_domain_unaligned" | "author_domain" | "sender_domain_mismatch";
             integration_id?: number | null;
             /** @enum {string} */
-            status?: "pending" | "verified" | "failed";
+            status?: "pending" | "verified";
             /**
              * @description Effective observed DMARC policy persisted by Nitrosend; defaults to none until observed.
              * @enum {string}
@@ -3599,7 +3707,7 @@ export interface components {
                 id?: number;
                 name?: string;
                 /** @enum {string} */
-                status?: "pending" | "verified" | "failed";
+                status?: "pending" | "verified";
             };
             entri?: {
                 application_id?: string;
@@ -7488,8 +7596,8 @@ export interface operations {
                     stripe: {
                         /** @description Customer Stripe Restricted API Key beginning with `rk_`. */
                         api_key: string;
-                        /** @description Stripe webhook signing secret for `/hooks/stripe_data`. */
-                        signing_secret: string;
+                        /** @description Optional Stripe webhook signing secret for `/hooks/stripe_data` when automatic endpoint creation is unavailable. */
+                        signing_secret?: string;
                     };
                 };
             };
@@ -7645,6 +7753,61 @@ export interface operations {
             };
         };
     };
+    openShopifyEmbeddedSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Embedded Shopify integration opened */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        integration_id: number;
+                        /** Format: uri */
+                        manage_url?: string | null;
+                        requires_plan: boolean;
+                        redirect_to: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    reconcileShopifyAppPricing: {
+        parameters: {
+            query: {
+                shop: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect back to the app in Shopify Admin */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid Shopify shop domain */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     ingestShopifyPixelEvent: {
         parameters: {
             query?: never;
@@ -7657,7 +7820,7 @@ export interface operations {
                 "application/json": {
                     event_id: string;
                     /** @enum {string} */
-                    event_name: "product_viewed" | "product_added_to_cart" | "product_removed_from_cart" | "checkout_started" | "checkout_completed";
+                    event_name: "product_viewed" | "product_added_to_cart" | "product_removed_from_cart";
                     customer_id?: string;
                     /** Format: email */
                     email?: string;
