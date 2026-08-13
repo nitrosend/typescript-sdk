@@ -49,6 +49,8 @@ export interface Brand {
   emailFromName: string | null;
   emailFromEmail: string | null;
   emailReplyTo: string | null;
+  emailTrackOpens: boolean;
+  emailTrackClicks: boolean;
   testEmailRecipients: string[];
   onboardingState: Record<string, unknown>;
   onboarding: { steps: Record<string, unknown>; progress: number };
@@ -291,6 +293,8 @@ export interface CreateBrand {
   emailFromName?: string;
   emailFromEmail?: string;
   emailReplyTo?: string;
+  emailTrackOpens?: boolean;
+  emailTrackClicks?: boolean;
   testEmailRecipients?: string[];
   exampleCopy?: string[];
   links?: Record<string, unknown>[];
@@ -376,6 +380,8 @@ export interface UpdateBrand {
   emailFromName?: string;
   emailFromEmail?: string;
   emailReplyTo?: string;
+  emailTrackOpens?: boolean;
+  emailTrackClicks?: boolean;
   testEmailRecipients?: string[];
   exampleCopy?: string[];
   links?: Record<string, unknown>[];
