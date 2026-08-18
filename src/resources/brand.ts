@@ -1,5 +1,5 @@
 import type { NitrosendClient } from '../client.js';
-import type { Brand, CreateBrand, UpdateBrand } from '../types.js';
+import type { Brand, BrandSubdomainPreparationResponse, CreateBrand, UpdateBrand } from '../types.js';
 
 export class BrandResource {
   private readonly client: NitrosendClient;
@@ -30,6 +30,14 @@ export class BrandResource {
     const { data } = await this.client.request<Brand>('PATCH', `${this.path}/${sid}`, {
       body: params as Record<string, unknown>,
     });
+    return data;
+  }
+
+  async prepareBrandSubdomain(sid: string): Promise<BrandSubdomainPreparationResponse> {
+    const { data } = await this.client.request<BrandSubdomainPreparationResponse>(
+      'POST',
+      `${this.path}/${sid}/prepare_sending`,
+    );
     return data;
   }
 

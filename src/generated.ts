@@ -188,6 +188,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/my/affiliate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the current account's Affiliate Center
+         * @description Session/JWT only. API keys are rejected. For an entitled account that is not linked locally, the first read starts one background reconciliation. That reconciliation links an existing Rewardful affiliate by the account owner's email or creates one when absent.
+         */
+        get: operations["getMyAffiliate"];
+        put?: never;
+        /**
+         * Reconcile the current account's affiliate immediately
+         * @description Session/JWT-only repair path. This is idempotent and uses the same existing-or-create behavior as background reconciliation.
+         */
+        post: operations["reconcileMyAffiliate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/my/account": {
         parameters: {
             query?: never;
@@ -206,6 +230,110 @@ export interface paths {
         patch: operations["updateAccount"];
         trace?: never;
     };
+    "/v1/my/delivery/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Inspect email sender capacity and pacing
+         * @description Returns a read-only projection of the persisted delivery controls for
+         *     the selected Brand. This endpoint does not authorize or reserve a send;
+         *     every send still passes through the canonical admission authority.
+         *     Pacing describes when admitted work can dispatch and is not itself an
+         *     admission decision.
+         */
+        get: operations["getDeliveryStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/validation_operations/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Quote explicit prepaid email validation
+         * @description Classifies one exact current-Brand audience, applies current cached and
+         *     eligibility evidence, and returns the maximum prepaid charge. It does
+         *     not hold funds, call a provider, create an operation, or mutate Contacts.
+         *     Validation has no plan-included allowance.
+         */
+        post: operations["quoteEmailValidation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/validation_operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start or resume explicit prepaid email validation
+         * @description Creates one durable operation and holds at most the quoted amount from
+         *     direct prepaid funds. Reusing the same Idempotency-Key with the same
+         *     audience returns the same operation; after funding, the same request
+         *     resumes a needs_funding operation. A changed audience conflicts.
+         */
+        post: operations["createEmailValidationOperation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/validation_operations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an email validation operation */
+        get: operations["getEmailValidationOperation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/validation_operations/{id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List per-candidate email validation results */
+        get: operations["listEmailValidationOperationItems"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/my/accounts": {
         parameters: {
             query?: never;
@@ -217,6 +345,367 @@ export interface paths {
         get: operations["listAccounts"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/managed_accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the selected manager account's client portfolio */
+        get: operations["listManagedAccounts"];
+        put?: never;
+        /** Provision a paid-required, client-owned account */
+        post: operations["createManagedAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/managed_accounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Get one managed-client portfolio row */
+        get: operations["getManagedAccount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/managed_accounts/{id}/resend_invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Invalidate the prior invitation and queue a bounded replacement for owner-only delivery */
+        post: operations["resendManagedAccountInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/managed_accounts/{id}/send_invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Queue the first bounded owner invitation after client setup is ready */
+        post: operations["sendManagedAccountInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/managed_accounts/{id}/payment_reminder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Queue a cooldown-bound payment reminder to the owner */
+        post: operations["remindManagedAccountPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/managed_accounts/{id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** End the selected manager's relationship with the client */
+        post: operations["releaseManagedAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/account/provisioning_credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List non-secret provisioning credential metadata */
+        get: operations["listAccountProvisioningCredentials"];
+        put?: never;
+        /** Issue a provisioning credential and reveal its secret once */
+        post: operations["createAccountProvisioningCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/account/provisioning_credentials/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke one manager-bound provisioning credential */
+        delete: operations["revokeAccountProvisioningCredential"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/managed_account_claims/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Inspect a bounded owner consent capability */
+        post: operations["inspectManagedAccountClaim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/managed_account_claims/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record one-time consent for the exact authenticated owner */
+        post: operations["completeManagedAccountClaim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/partner/managed_accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List managed clients using a manager-bound credential */
+        get: operations["listPartnerManagedAccounts"];
+        put?: never;
+        /** Provision a paid-required client-owned account */
+        post: operations["createPartnerManagedAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/partner/managed_accounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Get one manager-scoped portfolio row */
+        get: operations["getPartnerManagedAccount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/partner/managed_accounts/{id}/resend_invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Invalidate the prior invitation and queue a bounded replacement for owner-only delivery */
+        post: operations["resendPartnerManagedAccountInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/partner/managed_accounts/{id}/send_invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Queue the first bounded owner invitation after client setup is ready */
+        post: operations["sendPartnerManagedAccountInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/partner/managed_accounts/{provisioning_id}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Manager-scoped provisioning row id. */
+                provisioning_id: number;
+            };
+            cookie?: never;
+        };
+        /** List non-secret agent credential metadata for one managed client */
+        get: operations["listPartnerManagedAccountCredentials"];
+        put?: never;
+        /** Issue one grant- and Brand-pinned agent credential */
+        post: operations["createPartnerManagedAccountCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/partner/managed_accounts/{provisioning_id}/credentials/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Manager-scoped provisioning row id. */
+                provisioning_id: number;
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke one agent credential immediately */
+        delete: operations["revokePartnerManagedAccountCredential"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/account/management_grant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the current account's pending or active management grant
+         * @description Only the canonical owner of the selected managed account may use this endpoint.
+         */
+        get: operations["getCurrentAccountManagementGrant"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/account/management_grant/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reconcile a consented, paid managed-account grant
+         * @description This endpoint cannot record owner consent or bypass paid activation.
+         */
+        post: operations["confirmAccountManagementGrant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/account/management_grant/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke an exact pending or active management grant
+         * @description Revocation takes effect on the next REST or MCP request and is idempotent for the exact grant.
+         */
+        post: operations["revokeAccountManagementGrant"];
         delete?: never;
         options?: never;
         head?: never;
@@ -305,6 +794,28 @@ export interface paths {
         /** Change the current subscription plan */
         put: operations["changeSubscriptionPlan"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/subscription/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start a subscription checkout
+         * @description Starts checkout through the account's authoritative billing provider.
+         *     Shopify-managed accounts receive a Shopify-hosted approval URL and
+         *     never receive a Stripe checkout URL.
+         */
+        post: operations["checkoutSubscription"];
         delete?: never;
         options?: never;
         head?: never;
@@ -429,7 +940,7 @@ export interface paths {
         patch: operations["updateContact"];
         trace?: never;
     };
-    "/v1/my/contacts/{id}/enrich": {
+    "/v1/my/contacts/enrichment/quote": {
         parameters: {
             query?: never;
             header?: never;
@@ -439,12 +950,37 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Re-enrich a contact via email verification + Apollo
-         * @description Queues the contact for email verification and Apollo enrichment.
-         *     Consumes 2 validation allowance units. Requires the contact to have
-         *     an email channel.
+         * Quote profile enrichment for one or more Contacts
+         * @description Resolves already-current and same-Brand reusable profile evidence before
+         *     provider work. This endpoint never calls a provider or reserves money.
+         *     Profile enrichment is priced per successful outcome and has no
+         *     plan-included allowance.
          */
-        post: operations["enrichContact"];
+        post: operations["quoteContactProfileEnrichment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/contacts/enrichment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Queue profile enrichment for one or more Contacts
+         * @description Holds the quoted maximum, then queues bounded Contact work. Current
+         *     evidence is skipped without charge. Fresh same-Brand evidence and usable
+         *     provider results each commit one outcome; no-match and failures void the
+         *     hold. This operation does not verify, subscribe, suppress, or qualify an
+         *     email channel.
+         */
+        post: operations["enrichContactProfiles"];
         delete?: never;
         options?: never;
         head?: never;
@@ -466,6 +1002,28 @@ export interface paths {
          *     exposed. Page using the `cursor` returned as `next_cursor`.
          */
         get: operations["getContactTimeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/contacts/{id}/enrichment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Enrichment facts for a contact
+         * @description Read-only enrichment facts resolved into display rows. Facts sourced from
+         *     an integration you have connected are attributed with that integration's
+         *     name; facts from other sources are returned unattributed.
+         */
+        get: operations["getContactEnrichment"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1112,6 +1670,12 @@ export interface paths {
         /**
          * Send a test email for a campaign
          * @description Thin adapter over the same test-send service used by template tests.
+         *     Use `contact_id` to send directly to a contact, or
+         *     `sample_contact_id` to personalize explicit test recipients without
+         *     sending to that contact. The two contact parameters are mutually
+         *     exclusive.
+         *     Supply one fresh `Idempotency-Key` for each user-initiated send and
+         *     reuse that exact key for transport retries.
          */
         post: operations["sendCampaignTestEmail"];
         delete?: never;
@@ -1133,14 +1697,12 @@ export interface paths {
         put?: never;
         /**
          * Send a campaign
-         * @description Transitions the campaign and its flow to live, then delivers.
-         *     Optionally update trigger and template attributes in the same request.
-         *     To schedule instead of sending now, pass the delivery time as
-         *     `trigger_attributes.data.deliver_at` (RFC 3339); omit it to send
-         *     immediately. A top-level `scheduled_at` (or a nested
-         *     `trigger_attributes.data.scheduled_at`) is **not** accepted here and
-         *     returns 422 `scheduled_at_not_accepted` rather than being silently
-         *     ignored — `scheduled_at` is the create/update field, not the send field.
+         * @description Delivers the exact persisted campaign snapshot. Save content, audience,
+         *     and other authoring changes through the campaign update endpoint first.
+         *     This endpoint rejects authoring fields rather than merging them during
+         *     delivery. Pass `deliver_at` (RFC 3339) to schedule; omit it to send now.
+         *     Both `expected_campaign_updated_at` and `template_if_version` are
+         *     required so a stale caller cannot send a newer draft accidentally.
          *     Returns 422 `campaign_locked` if the campaign is not editable
          *     (live, paused, completed, cancelled, archived, or scheduled within
          *     5 minutes of send). Returns 409 `duplicate_campaign_schedule` or
@@ -1168,7 +1730,12 @@ export interface paths {
          */
         get: operations["listTemplates"];
         put?: never;
-        /** Create a standalone template */
+        /**
+         * Create a standalone template
+         * @description Creates one standalone template. Idempotency-Key is required; an exact
+         *     retry returns the original template, while reuse with changed input
+         *     returns 409.
+         */
         post: operations["createTemplate"];
         delete?: never;
         options?: never;
@@ -1234,7 +1801,13 @@ export interface paths {
          * Send a test email
          * @description Send a test email for the given template. Provide `email` for an
          *     explicit recipient, `contact_id` to use a contact's email (with
-         *     merge-tag personalization), or omit both to send to the account owner.
+         *     merge-tag personalization), or `sample_contact_id` to personalize an
+         *     explicit test recipient without sending to the contact. `contact_id`
+         *     and `sample_contact_id` are mutually exclusive. Omit all recipient
+         *     inputs to use the brand's saved test recipients, falling back to the
+         *     account owner.
+         *     Supply one fresh `Idempotency-Key` for each user-initiated send and
+         *     reuse that exact key for transport retries.
          */
         post: operations["sendTestEmail"];
         delete?: never;
@@ -1282,7 +1855,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/my/templates/starters": {
+    "/v1/my/templates/library": {
         parameters: {
             query?: never;
             header?: never;
@@ -1290,11 +1863,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List email starter designs
-         * @description Returns config-based starter email designs with the current brand's
-         *     theme merged and an HTML preview rendered for each starter.
+         * List the system template library
+         * @description Returns the curated system template catalog. Each template ships two
+         *     faces: its original art direction (design/preview_html) and a
+         *     brand-matched variant with the palette overrides stripped so the
+         *     account's colors flow in (branded_design/branded_preview_html).
+         *     Sourced from `config/email_templates.yml`.
          */
-        get: operations["listEmailStarters"];
+        get: operations["listEmailTemplateLibrary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1313,10 +1889,12 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * AI-generate an email template
-         * @description Generate a complete email design from a text goal using AI. Returns a
-         *     sections-based design, subject line, preheader, and inferred category.
-         *     Supports refine mode by passing existing sections[] for modification.
+         * AI-generate an email draft
+         * @description Generate, regenerate, or refine a complete template, campaign-email, or
+         *     selected flow-email draft through the same authoring spine. This never
+         *     persists or sends. A flow target addresses exactly one existing email
+         *     action, never the whole flow. Reusing an idempotency key with changed
+         *     authoring input returns a conflict.
          */
         post: operations["generateEmailTemplate"];
         delete?: never;
@@ -1338,7 +1916,12 @@ export interface paths {
          */
         get: operations["listFlows"];
         put?: never;
-        /** Create a flow */
+        /**
+         * Create a flow
+         * @description Creates a draft flow without delivery authority. Idempotency-Key is
+         *     required; an exact retry returns the original flow, while reuse with
+         *     changed input returns 409. Approve or activate in a separate request.
+         */
         post: operations["createFlow"];
         delete?: never;
         options?: never;
@@ -1365,8 +1948,14 @@ export interface paths {
         head?: never;
         /**
          * Update a flow
-         * @description Supports optimistic concurrency — pass `updated_at` to reject
-         *     the update if the flow was modified externally.
+         * @description Authoring (`name`, `trigger`, `steps`, `generation_provenance`) and
+         *     delivery control (`status`, `approval_state`) are separate requests and
+         *     must not be mixed. For graph writes, pass `expected_draft_revision_id`
+         *     from the latest flow read to reject stale authored changes. Flow
+         *     approval/rejection and `status: live` publication require `revision_id`
+         *     for the exact current draft. `status: live` without `revision_id`
+         *     resumes a paused flow's existing active revision and never publishes
+         *     pending changes.
          */
         patch: operations["updateFlow"];
         trace?: never;
@@ -1538,7 +2127,11 @@ export interface paths {
         get: operations["getDomain"];
         put?: never;
         post?: never;
-        /** Remove a sending domain */
+        /**
+         * Remove a sending domain
+         * @description A paired domain first returns `422` with the exact counterpart impact.
+         *     Repeat with `unpair=true` only after the user confirms that outcome.
+         */
         delete: operations["deleteDomain"];
         options?: never;
         head?: never;
@@ -1672,6 +2265,45 @@ export interface paths {
         patch: operations["setPrimaryIntegration"];
         trace?: never;
     };
+    "/v1/my/integrations/{integration_id}/sync_configuration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                integration_id: number;
+            };
+            cookie?: never;
+        };
+        /** Get an integration's versioned profile sync contract */
+        get: operations["getIntegrationSyncConfiguration"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Validate and update an integration's profile sync contract */
+        patch: operations["updateIntegrationSyncConfiguration"];
+        trace?: never;
+    };
+    "/v1/my/integrations/{integration_id}/sync_configuration/discovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                integration_id: number;
+            };
+            cookie?: never;
+        };
+        /** Discover safe provider objects and attributes for profile sync */
+        get: operations["discoverIntegrationSyncConfiguration"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/my/integrations/attio/connect": {
         parameters: {
             query?: never;
@@ -1730,6 +2362,32 @@ export interface paths {
          *     response URL includes a signed state payload and the API callback URI.
          */
         post: operations["connectShopifyIntegration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/integrations/shopify/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Connect a merchant-owned Shopify app
+         * @description Connects an API-only Shopify app owned by the same Shopify organization
+         *     as its store. Nitrosend exchanges the client credentials server-side,
+         *     verifies the authenticated shop and granted Admin API scopes, then stores
+         *     the access token and client secret encrypted. Repeating the request for
+         *     the same brand and shop verifies the new credentials before replacing the
+         *     current connection. The response never includes client credentials or an
+         *     access token.
+         */
+        post: operations["connectShopifyMerchantCredentials"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1814,12 +2472,74 @@ export interface paths {
         /**
          * Shopify OAuth callback endpoint
          * @description Public callback endpoint used by Shopify after user authorization.
-         *     Verifies signed state, shop domain, Shopify OAuth HMAC, exchanges the
-         *     auth code, persists the integration, and enqueues initial sync.
+         *     Verifies signed state, resolves the Shopify app from that signed state,
+         *     verifies the app-specific OAuth HMAC, exchanges the auth code, persists
+         *     the integration and app key, and enqueues initial sync.
          */
         get: operations["shopifyOauthCallback"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hooks/shopify/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Receive an App Store Shopify webhook
+         * @description Uses the App Store app credentials when no app key is present.
+         */
+        post: operations["receiveShopifyAppStoreWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hooks/shopify/merchant/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Receive a merchant-managed Shopify webhook
+         * @description Resolves only active merchant-managed connections from the Shopify shop
+         *     header and verifies the raw request body with that connection's encrypted
+         *     client secret before parsing. Unknown shops, ambiguous ownership, missing
+         *     secrets, and invalid signatures return the same response. Shopify Billing
+         *     API topics are never processed on this route.
+         */
+        post: operations["receiveShopifyMerchantWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hooks/shopify/events/{app_key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Receive a Shopify webhook for a named app */
+        post: operations["receiveShopifyAppWebhook"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1929,6 +2649,29 @@ export interface paths {
         head?: never;
         /** Update a brand */
         patch: operations["updateBrand"];
+        trace?: never;
+    };
+    "/v1/my/brands/{sid}/prepare_sending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Brand secure identifier */
+                sid: components["parameters"]["BrandSid"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepare the reserved Nitrosend sender
+         * @description Idempotently creates the launch-apex endpoint and queues asynchronous DNS, DKIM, SES identity, and tenant preparation. It never sends or retains email. Brand creation itself reserves only the permanent slug.
+         */
+        post: operations["prepareBrandSending"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/my/brands/{sid}/deletion_safety": {
@@ -2059,6 +2802,12 @@ export interface paths {
          * @description Send a transactional email or SMS to a single recipient immediately.
          *     No campaign, no audience, no approval required.
          *     Use for receipts, password resets, OTPs, order confirmations, and system notifications.
+         *     A stable idempotency key is strongly recommended via the
+         *     `Idempotency-Key` header or `idempotency_key` body field, and becomes
+         *     mandatory on 2026-09-01. Before that cutoff, keyless requests are
+         *     accepted but deprecated: they skip duplicate protection and the
+         *     response carries `Deprecation` and `Sunset` headers. Reuse a key only
+         *     for an exact retry.
          */
         post: operations["createMessage"];
         delete?: never;
@@ -2177,6 +2926,78 @@ export interface paths {
         patch: operations["closeChatSession"];
         trace?: never;
     };
+    "/v1/my/billing/paid_action_intents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create or exactly replay a resumable paid operation
+         * @description Persists encrypted, operation-owned continuation state. The intent is
+         *     not spend authority and never executes the operation automatically.
+         */
+        post: operations["createPaidActionIntent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/billing/paid_action_intents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Restore and re-quote a paid operation */
+        get: operations["getPaidActionIntent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/billing/paid_action_intents/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel and scrub a paid-operation continuation */
+        post: operations["cancelPaidActionIntent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/billing/paid_action_intents/{id}/consume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark a successfully executed paid operation consumed */
+        post: operations["consumePaidActionIntent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/contacts": {
         parameters: {
             query?: never;
@@ -2220,10 +3041,176 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/operator/support_requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the production customer-support queue
+         * @description Requires an `nskey_live_...` API key owned by an admin or staff user. Browser JWTs are rejected.
+         */
+        get: operations["listOperatorSupportRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/operator/support_requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Get one production support case */
+        get: operations["getOperatorSupportRequest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/operator/support_requests/{id}/diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Read bounded live diagnostics for a support case */
+        get: operations["diagnoseOperatorSupportRequest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/operator/support_requests/{id}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Persist a versioned customer reply draft */
+        post: operations["draftOperatorSupportReply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/operator/support_requests/{id}/send_reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send one current versioned customer reply
+         * @description Delivery is fail-closed and requires `confirm: true`; stale draft versions are rejected by the server ledger.
+         */
+        post: operations["sendOperatorSupportReply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/operator/support_requests/{id}/disposition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set the persistent support-case disposition */
+        post: operations["dispositionOperatorSupportRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        OperatorSupportRequest: {
+            id: number;
+            account_id: number;
+            brand_id: number;
+            subject: string;
+            message: string;
+            /** @enum {string} */
+            status: "open" | "waiting" | "resolved";
+            /** Format: date-time */
+            follow_up_at?: string | null;
+            /** Format: date-time */
+            resolved_at?: string | null;
+            /** Format: date-time */
+            last_replied_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        OperatorSupportCase: {
+            support_request: components["schemas"]["OperatorSupportRequest"] & {
+                support_transcript?: string | null;
+                support_transcript_truncated?: boolean;
+            };
+            account: {
+                [key: string]: unknown;
+            };
+            brand: {
+                [key: string]: unknown;
+            };
+            latest_reply?: {
+                [key: string]: unknown;
+            } | null;
+            github_issue?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        OperatorReplyDraft: {
+            /** @enum {string} */
+            status: "drafted" | "sent";
+            support_request_id: number;
+            thread_record_id: number;
+            draft_version: number;
+            draft_state?: string;
+            terminal_outcome?: string | null;
+            /** Format: date-time */
+            last_replied_at?: string | null;
+        };
         /** @description One normalised, whitelisted entry in a contact's unified timeline. */
         TimelineEntry: {
             /** @description Stable composite id, e.g. "event-123". */
@@ -2248,6 +3235,15 @@ export interface components {
             error: true;
             /** @description Optional machine-readable error reason. */
             error_code?: string | null;
+            /** @description Existing provisioning row involved in a managed-account conflict. */
+            provisioning_id?: number | null;
+            /** @description Whether retrying the same idempotent operation can succeed. */
+            retryable?: boolean;
+            /**
+             * Format: date-time
+             * @description Earliest recommended retry time for a retryable failure.
+             */
+            retry_at?: string;
         };
         User: {
             id?: number;
@@ -2281,6 +3277,159 @@ export interface components {
              */
             redirect_url: string;
         };
+        /** @enum {string} */
+        ManagedAccountLifecycleStatus: "preparing" | "awaiting_owner" | "payment_required" | "active" | "payment_issue" | "ended";
+        /** @enum {string} */
+        ManagedAccountLifecycleStatusFilter: "preparing" | "awaiting_owner" | "payment_required" | "active" | "payment_issue" | "ended" | "needs_setup";
+        ManagedAccountProvisioning: {
+            id: number;
+            external_ref: string;
+            /** @enum {string} */
+            source: "dashboard" | "partner_api";
+            status: components["schemas"]["ManagedAccountLifecycleStatus"];
+            /** @enum {string} */
+            permission_set: "operator_v1";
+            allowed_actions: ("send_invitation" | "resend_invitation" | "send_payment_reminder" | "enter" | "release")[];
+            managed_account: {
+                id: number;
+                name: string | null;
+            };
+            owner: {
+                /** Format: email */
+                email: string;
+            };
+            invitation: {
+                expired: boolean;
+                /** Format: date-time */
+                expires_at: string;
+                /** Format: date-time */
+                deadline_at: string;
+                /** Format: date-time */
+                notice_sent_at: string | null;
+                /** Format: date-time */
+                claimed_at: string | null;
+                reissues_remaining: number;
+            };
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ManagedAccountProvisioningCreated: components["schemas"]["ManagedAccountProvisioning"] & {
+            idempotent_replay: boolean;
+        };
+        DashboardManagedAccountCreateRequest: {
+            managed_account: {
+                /** Format: email */
+                owner_email: string;
+                owner_first_name?: string;
+                owner_last_name?: string;
+                account_name: string;
+            };
+        };
+        PartnerManagedAccountCreateRequest: {
+            managed_account: {
+                external_ref: string;
+                /** Format: email */
+                owner_email: string;
+                owner_first_name?: string;
+                owner_last_name?: string;
+                account_name: string;
+            };
+        };
+        AccountProvisioningCredential: {
+            id: number;
+            name: string;
+            scopes: ("provision" | "manage")[];
+            secret_hint: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            last_used_at?: string | null;
+            /** Format: date-time */
+            revoked_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AccountProvisioningCredentialIssued: components["schemas"]["AccountProvisioningCredential"] & {
+            /** @description One-time nspk_live_ credential secret. */
+            secret: string;
+        };
+        AccountProvisioningCredentialCreateRequest: {
+            credential: {
+                name: string;
+                scopes: ("provision" | "manage")[];
+                /** Format: date-time */
+                expires_at?: string;
+            };
+        };
+        AccountManagementCredential: {
+            id: number;
+            account_management_grant_id: number;
+            name: string;
+            /** @enum {string} */
+            permission_set: "operator_v1";
+            secret_hint: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            last_used_at?: string | null;
+            /** Format: date-time */
+            revoked_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            brand: {
+                id: number;
+                sid: string;
+                name: string;
+            };
+        };
+        AccountManagementCredentialIssued: components["schemas"]["AccountManagementCredential"] & {
+            /** @description One-time nsmc_live_ credential secret. */
+            secret: string;
+        };
+        AccountManagementCredentialCreateRequest: {
+            credential: {
+                name: string;
+                /** @description Defaults to the managed Account's default Brand. */
+                brand_sid?: string;
+                /**
+                 * Format: date-time
+                 * @description Defaults to 90 days and cannot exceed one year.
+                 */
+                expires_at?: string;
+            };
+        };
+        ManagedAccountClaimRequest: {
+            claim: {
+                token: string;
+            };
+        };
+        ManagedAccountClaimCompletionRequest: components["schemas"]["ManagedAccountClaimRequest"];
+        ManagedAccountClaimInspection: {
+            manager: {
+                name?: string | null;
+            };
+            managed_account: {
+                name?: string | null;
+            };
+            /** @description Masked owner address */
+            owner_email: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** @constant */
+            authentication: "login_required";
+        };
+        ManagedAccountClaimCompletion: {
+            /** @constant */
+            claimed: true;
+            /** @enum {string} */
+            status: "payment_required" | "active" | "manager_disabled";
+            managed_account: {
+                id: number;
+                name: string | null;
+            };
+        };
         Account: {
             id?: number;
             name?: string | null;
@@ -2289,11 +3438,16 @@ export interface components {
             /** @description Signed blob ID */
             banner?: string | null;
             /** @enum {string} */
-            account_tier?: "free" | "paid" | "trusted";
+            commercial_tier?: "unsubscribed" | "free" | "pro" | "ultra" | "enterprise";
             safe_mode_enabled?: boolean;
+            access?: components["schemas"]["AccountAccess"];
+            /** @description Present for direct access and omitted from delegated account-list projections. */
             billing?: {
+                /** @enum {string} */
+                access_policy?: "free_allowed" | "paid_required";
                 plan_name?: string;
                 overage?: Record<string, never>;
+                entitlements?: components["schemas"]["BillingEntitlements"];
                 resources?: {
                     email?: {
                         used?: number;
@@ -2332,6 +3486,7 @@ export interface components {
                 };
             };
             brands?: components["schemas"]["Brand"][];
+            /** @description Present for direct access and omitted from delegated account-list projections. */
             team?: {
                 seat_limit?: number;
                 seat_count?: number;
@@ -2344,6 +3499,41 @@ export interface components {
             created_at?: string;
             /** Format: date-time */
             updated_at?: string;
+        };
+        AccountAccess: {
+            /** @enum {string} */
+            source: "owner" | "membership" | "platform_admin" | "delegated" | "management_credential" | "api_key" | "shopify";
+            delegated: boolean;
+            manager_account_id?: number;
+            manager_account_name?: string | null;
+            management_grant_id?: number;
+            /** @enum {string} */
+            permission_set?: "operator_v1";
+            /** @enum {string} */
+            credential_type?: "management";
+        };
+        AccountManagementGrant: {
+            id: number;
+            /** @enum {string} */
+            status: "pending" | "active" | "revoked" | "released";
+            /** @enum {string} */
+            permission_set: "operator_v1";
+            manager_account: {
+                id: number;
+                name?: string | null;
+            };
+            /** Format: date-time */
+            requested_at: string;
+            /** Format: date-time */
+            activated_at?: string | null;
+            /** Format: date-time */
+            revoked_at?: string | null;
+            /** Format: date-time */
+            released_at?: string | null;
+        };
+        AccountManagementGrantCommand: {
+            /** @description Exact grant returned by the show endpoint; prevents a stale command from targeting a replacement grant. */
+            management_grant_id: number;
         };
         AccountTeam: {
             account?: components["schemas"]["Account"];
@@ -2391,8 +3581,15 @@ export interface components {
             plan_name?: string | null;
             /** @enum {string|null} */
             billing_provider?: "shopify" | "stripe" | "vercel" | null;
+            /** @enum {string|null} */
+            source_billing_provider?: "shopify" | "stripe" | "vercel" | null;
+            billing_migration_required?: boolean;
             /** Format: uri */
             manage_url?: string | null;
+            /** @description Merchant-selected monthly cap for metered usage charges. */
+            spend_cap_monthly_cents?: number | null;
+            /** @description Whether the active Shopify plan has at least one configured usage meter. */
+            shopify_usage_metered?: boolean;
             /** @enum {string} */
             status?: "pending" | "active" | "inactive" | "canceled" | "free_tier";
             /** @enum {string} */
@@ -2412,6 +3609,25 @@ export interface components {
              */
             discount_end_at?: string | null;
             activated?: boolean;
+            entitlements?: components["schemas"]["BillingEntitlements"];
+        };
+        BillingEntitlements: {
+            agent_inbox: components["schemas"]["AgentInboxEntitlement"];
+        };
+        AgentInboxEntitlement: {
+            enabled: boolean;
+            /** @description Account-wide exact-inbox capacity. Null means contract-defined unlimited capacity. */
+            max_inboxes: number | null;
+            inbound_messages_included: number | null;
+            inbound_messages_metered: boolean;
+            inbound_message_overage_rate_cents: string;
+            max_inbound_domains: number | null;
+            max_apex_domains: number | null;
+            apex_mx: boolean;
+            legacy_forwarding: boolean;
+            catch_all: boolean;
+            retention_days: number | null;
+            advanced_queue_controls: boolean;
         };
         SubscriptionCreateRequest: {
             plan_id: number;
@@ -2443,6 +3659,7 @@ export interface components {
         OAuthPopupAccount: {
             id: number;
             name: string;
+            access?: components["schemas"]["AccountAccess"];
             can_manage?: boolean;
             needs_subscribe: boolean;
         };
@@ -2546,6 +3763,7 @@ export interface components {
             };
             domain_verified?: boolean;
             can_send?: boolean;
+            brand_subdomain?: components["schemas"]["BrandSubdomain"] | null;
             /** @description Warns when the brand has connected its own (BYO) email provider but verified sending domains still route through nitrosend's shared managed pool. Read-only; never blocks a send. `mismatch` is false (and `message` null) when all is well. */
             byo_routing?: {
                 mismatch?: boolean;
@@ -2557,10 +3775,6 @@ export interface components {
             };
             /** @description Count of subscribed contacts in this brand. */
             subscribed_contacts_count?: number;
-            using_sandbox?: boolean;
-            sandbox_email?: string | null;
-            sandbox_monthly_cap?: number;
-            sandbox_sends_remaining?: number;
             capabilities?: {
                 [key: string]: unknown;
             };
@@ -2568,6 +3782,35 @@ export interface components {
             created_at?: string;
             /** Format: date-time */
             updated_at?: string;
+        };
+        BrandSubdomain: {
+            /** @enum {string} */
+            namespace_status: "active" | "replacement_pending" | "retiring" | "retired";
+            /** @enum {string} */
+            status: "not_prepared" | "allocated" | "provisioning_dns" | "provisioning_provider" | "pending_verification" | "ready" | "retiring" | "retired" | "failed_retryable" | "failed_terminal";
+            ready: boolean;
+            selected?: boolean;
+            preparation_required: boolean;
+            /** Format: email */
+            from_email?: string;
+            fqdn?: string;
+            apex?: string;
+            local_part?: string;
+            local_part_editable?: boolean;
+            /** @constant */
+            fqdn_changeable?: false;
+            /** Format: date-time */
+            provisioning_requested_at?: string;
+            /** Format: date-time */
+            ready_at?: string;
+            /** Format: date-time */
+            next_retry_at?: string;
+            failure_code?: string;
+        };
+        BrandSubdomainPreparationResponse: {
+            /** @enum {string} */
+            status: "provisioning" | "ready";
+            brand_subdomain: components["schemas"]["BrandSubdomain"];
         };
         BrandDeletionSafetyImpact: {
             contacts: number;
@@ -2590,6 +3833,31 @@ export interface components {
             /** @description True when active sends require `force=true` to delete. */
             requires_force: boolean;
         };
+        AffiliateCenterPayload: {
+            /** @description Whether the account is linked to a Rewardful affiliate. */
+            enrolled: boolean;
+            /** @description Whether live affiliate data or setup is currently available. */
+            available: boolean;
+            /** @enum {string|null} */
+            state?: "active" | "paused" | "unavailable" | null;
+            /**
+             * @description Present only while an entitled, unlinked account is being reconciled.
+             * @enum {string|null}
+             */
+            setup_status?: "pending" | "needs_details" | "unavailable" | null;
+            /** Format: uri */
+            share_url?: string | null;
+            stats?: {
+                visitors?: number;
+                leads?: number;
+                conversions?: number;
+            };
+            earnings?: {
+                known?: boolean;
+                total_cents?: number | null;
+                currency?: string;
+            };
+        };
         SetupCenterPayload: {
             cards?: components["schemas"]["SetupCenterCard"][];
             sections?: {
@@ -2603,6 +3871,8 @@ export interface components {
             seen?: boolean;
             dismissed?: boolean;
             complete?: boolean;
+            /** @description True when the brand is demonstrably operating: a real email send on a verified sending domain, or two or more distinct campaigns sent. Independent of `complete` — an established brand may still carry incomplete cards it has chosen to skip. Clients use it to retire setup nudges. */
+            established?: boolean;
         };
         SetupCenterCard: {
             /** @enum {string} */
@@ -2634,9 +3904,33 @@ export interface components {
              * @description Inferred from the first observed value; pinned and never flipped.
              * @enum {string}
              */
-            field_type: "string" | "number" | "boolean" | "date";
+            field_type: "string" | "number" | "boolean" | "date" | "enum";
+            /**
+             * @description Shared presentation contract used by fact displays and generated merge tags.
+             * @enum {string}
+             */
+            presentation_type: "text" | "number" | "currency" | "percent" | "date" | "datetime" | "boolean" | "enum";
+            /**
+             * @description Provider-supplied formatting metadata such as decimal precision,
+             *     currency-code field path, unit scale, or percentage multiplier.
+             */
+            presentation_options: {
+                [key: string]: unknown;
+            };
             /** @description Human-readable label. Defaults to a humanised version of the key. */
             label: string;
+            /** @description Source-qualified field label suitable for display. */
+            display_label?: string;
+            source_key?: string | null;
+            source_name?: string | null;
+            object_label?: string | null;
+            source_field_label?: string | null;
+            /**
+             * @description Ready-to-insert merge tag for a scalar custom or projected integration field.
+             *     Typed fields include the deterministic presentation filter used by preview,
+             *     test, and delivery rendering.
+             */
+            merge_tag?: string | null;
             /** @description Whether this field is pinned as a default column in the contacts grid. */
             promoted: boolean;
             /**
@@ -2654,6 +3948,278 @@ export interface components {
             created_at?: string;
             /** Format: date-time */
             updated_at?: string;
+        };
+        DeliveryCapacity: {
+            /** @enum {string} */
+            status: "known" | "unlimited" | "not_applicable" | "unknown" | "degraded";
+            limit: number | null;
+            reserved: number | null;
+            accepted: number | null;
+            provider_unknown: number | null;
+            remaining: number | null;
+        };
+        DeliveryPacingScope: {
+            type: string;
+            /** @enum {string} */
+            status: "ready" | "deferred";
+            /** Format: date-time */
+            next_dispatch_at?: string;
+            minimum_interval_seconds: number;
+            feedback_epoch: number;
+        };
+        DeliveryPacingState: {
+            /** @enum {string} */
+            status: "ready" | "deferred";
+            policy_version: string;
+            /** Format: date-time */
+            next_dispatch_at?: string;
+            scopes: components["schemas"]["DeliveryPacingScope"][];
+        };
+        DeliveryStatusIssue: {
+            /** @enum {string} */
+            control: "brand" | "sender_identity" | "commercial_capacity" | "identity_capacity" | "brand_subdomain_capacity";
+            /** @enum {string} */
+            reason_code: "brand_unavailable" | "sender_not_ready" | "sending_capacity_reached" | "sender_capacity_reached" | "brand_subdomain_capacity_reached" | "delivery_evidence_pending";
+            retryable: boolean;
+            /** Format: date-time */
+            retry_at?: string;
+        };
+        DeliveryStatus: {
+            /** @constant */
+            assessment_scope: "sender_capacity";
+            /** @enum {string} */
+            admission_status: "allowed" | "deferred" | "denied";
+            commercial_capacity: components["schemas"]["DeliveryCapacity"];
+            identity_capacity: components["schemas"]["DeliveryCapacity"];
+            brand_subdomain_capacity: components["schemas"]["DeliveryCapacity"];
+            pacing_state: components["schemas"]["DeliveryPacingState"];
+            /** @enum {string} */
+            blocking_control?: "brand" | "sender_identity" | "commercial_capacity" | "identity_capacity" | "brand_subdomain_capacity";
+            reason_code?: string;
+            issues: components["schemas"]["DeliveryStatusIssue"][];
+            /** Format: date-time */
+            retry_at?: string;
+            /** Format: date-time */
+            observed_at: string;
+        };
+        ValidationAudience: {
+            contact_channel_ids?: number[];
+            contact_ids?: number[];
+            list_id?: number;
+            segment_id?: number;
+        } & (unknown | unknown | unknown | unknown);
+        ValidationOperationCounts: {
+            candidate_count: number;
+            deduplicated_count: number;
+            cached_count: number;
+            ineligible_count: number;
+            eligible_count: number;
+            pending_count?: number;
+            executing_count?: number;
+            billable_count?: number;
+            not_billable_count?: number;
+            provider_unknown_count?: number;
+            failed_count?: number;
+        };
+        ValidationOperationPricing: {
+            price_book_version: string;
+            unit_rate_cents: string;
+            maximum_charge_cents: number;
+            committed_cents?: number;
+            released_cents?: number;
+            currency: string;
+            quote_digest?: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        ValidationOperationFunding: {
+            /** @constant */
+            route: "direct_prepaid";
+            available: boolean;
+            reason?: string;
+            usage_event_id?: number;
+            /** @enum {string} */
+            state?: "needs_funding" | "held" | "committed" | "released";
+            recovery?: {
+                [key: string]: unknown;
+            };
+        };
+        ValidationOperationQuote: {
+            /** @enum {string} */
+            status: "quoted" | "needs_funding";
+            /** @enum {string} */
+            source_kind: "contact_channel" | "contact" | "list" | "segment";
+            counts: components["schemas"]["ValidationOperationCounts"];
+            pricing: components["schemas"]["ValidationOperationPricing"];
+            funding: components["schemas"]["ValidationOperationFunding"];
+            spend: components["schemas"]["SpendProjection"];
+            /** @constant */
+            mutation: false;
+        };
+        ValidationOperation: {
+            operation_id: string;
+            /** @enum {string} */
+            status: "requested" | "quoted" | "held" | "executing" | "partially_committed" | "committed" | "released" | "needs_funding" | "failed";
+            /** @enum {string} */
+            source_kind: "contact_channel" | "contact" | "list" | "segment";
+            item_detail: {
+                /** @enum {string} */
+                status: "available" | "compacted";
+                /** Format: date-time */
+                compacted_at?: string;
+                item_count?: number;
+            };
+            counts: components["schemas"]["ValidationOperationCounts"];
+            pricing: components["schemas"]["ValidationOperationPricing"];
+            funding: components["schemas"]["ValidationOperationFunding"];
+            spend: components["schemas"]["SpendProjection"];
+            failure_code?: string;
+            /** Format: date-time */
+            started_at?: string;
+            /** Format: date-time */
+            completed_at?: string;
+            next_action?: string;
+        };
+        ValidationOperationItem: {
+            id: number;
+            contact_channel_id: number;
+            /** @enum {string} */
+            status: "pending" | "executing" | "billable" | "not_billable" | "provider_unknown" | "failed";
+            billable?: boolean;
+            provider?: string;
+            native_status?: string;
+            verdict?: string;
+            failure_code?: string;
+            result_reference?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            completed_at?: string;
+        };
+        ContactEnrichmentQuote: {
+            selected_count: number;
+            already_current_count: number;
+            reusable_count: number;
+            provider_required_count: number;
+            unavailable_count: number;
+            maximum_billable_outcomes: number;
+            /** @enum {string} */
+            resource?: "contact_profile_enrichment";
+            unit_rate_cents: string;
+            maximum_charge_cents: number;
+            /** @enum {string} */
+            currency: "USD";
+            price_book_version: string;
+            available: boolean;
+            reason?: string | null;
+            spend: components["schemas"]["SpendProjection"];
+        };
+        SpendProjection: {
+            /** @constant */
+            schema: "nitrosend.spend.v1";
+            /** @enum {string} */
+            status: "ready" | "needs_funding" | "payment_pending" | "blocked" | "unavailable";
+            /** @enum {string} */
+            route: "direct_prepaid" | "included" | "postpaid" | "shopify" | "vercel" | "legacy";
+            currency: string;
+            maximum_charge_cents: number;
+            balance?: components["schemas"]["SpendBalance"];
+            /** @description Canonical account funding projection from Billing::Funding::Presenter. */
+            funding: {
+                [key: string]: unknown;
+            };
+            recovery_action: components["schemas"]["SpendRecoveryAction"];
+        };
+        PaidActionIntentCreate: {
+            adapter_key: string;
+            adapter_version: string;
+            operation_idempotency_key: string;
+            /** @description Adapter-owned state, validated and encrypted before persistence. */
+            state_payload: {
+                [key: string]: unknown;
+            };
+        };
+        PaidActionIntent: {
+            /** @description Opaque public continuation identifier. */
+            id: string;
+            /** @constant */
+            schema: "nitrosend.paid_action_intent.v1";
+            /** @enum {string} */
+            status: "open" | "awaiting_funding" | "ready_to_resume" | "consumed" | "cancelled" | "expired";
+            adapter: {
+                key: string;
+                version: string;
+            };
+            operation_idempotency_key: string;
+            original_quote_fingerprint: string;
+            current_quote_fingerprint?: string;
+            quote_changed?: boolean;
+            state_payload?: {
+                [key: string]: unknown;
+            };
+            quote?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            consumed_at?: string | null;
+            /** Format: date-time */
+            cancelled_at?: string | null;
+        };
+        SpendBalance: {
+            available_cents: number;
+            reserved_cents: number;
+            shortfall_cents: number;
+        };
+        SpendRecoveryAction: {
+            /** @enum {string} */
+            type?: "add_funds" | "retry_add_funds" | "complete_checkout" | "wait_for_payment" | "ask_account_admin" | "manage_in_shopify" | "manage_in_marketplace" | "contact_support" | "unavailable";
+            reason?: string;
+            /** @enum {string} */
+            operation?: "add_funds";
+            /** Format: uri */
+            url?: string;
+            purchase_id?: number;
+            shortfall_cents?: number;
+            minimum_cents?: number;
+            maximum_cents?: number;
+            recommended_cents?: number;
+            preset_cents?: number[];
+        };
+        ContactEnrichmentFundingRequired: {
+            /** @constant */
+            code: "insufficient_balance";
+            message: string;
+            /** @constant */
+            error: true;
+            /** @constant */
+            error_code: "insufficient_balance";
+            currency: string;
+            required_cents: number;
+            available_cents: number;
+            reserved_cents: number;
+            shortfall_cents: number;
+            funding: {
+                [key: string]: unknown;
+            };
+            recovery_action: {
+                [key: string]: unknown;
+            };
+            spend: components["schemas"]["SpendProjection"];
+        };
+        ContactEnrichmentDispatch: {
+            selected_count: number;
+            queued_count: number;
+            already_current_count: number;
+            reusable_count: number;
+            provider_required_count: number;
+            unavailable_count: number;
+            maximum_charge_cents: number;
+            /** @enum {string} */
+            currency: "USD";
+            price_book_version: string;
+            idempotent_replay: boolean;
         };
         Contact: {
             id?: number;
@@ -2898,7 +4464,7 @@ export interface components {
              * @example 250000
              */
             contact_us_ceiling?: number;
-            /** @description True when imported contacts are created but campaign sends remain held for review. */
+            /** @description True when the import is large enough to be flagged for review. Contacts are still created and sends are not automatically held. */
             sends_held?: boolean;
         };
         Import: {
@@ -2912,6 +4478,8 @@ export interface components {
             total_rows?: number | null;
             success_rows?: number | null;
             failed_rows?: number | null;
+            /** @description Rows imported after one or more unusable optional channels were skipped. */
+            warning_rows?: number;
             /** @description Canonical live-progress block (the single progress representation). `pct` is the only percent source; a null `pct` means indeterminate. */
             progress?: {
                 /** @enum {string} */
@@ -2927,6 +4495,8 @@ export interface components {
             };
             /** @description Row-level errors as `[line_number, message, source]`. */
             import_errors?: (number | string)[][];
+            /** @description Bounded row-level warning samples as `[line_number, message, reason]`. */
+            import_warnings?: (number | string)[][];
             columns?: {
                 [key: string]: unknown;
             } | null;
@@ -3158,6 +4728,13 @@ export interface components {
             /** @enum {string} */
             status?: "draft" | "active" | "paused" | "completed";
             approval_state?: string;
+            draft_revision_id?: number | null;
+            draft_revision_digest?: string | null;
+            /** @enum {string|null} */
+            draft_approval_state?: "pending_review" | "approved" | "rejected" | null;
+            active_revision_id?: number | null;
+            active_revision_digest?: string | null;
+            has_unpublished_changes?: boolean;
             /** @enum {string} */
             channel?: "email" | "sms";
             name?: string;
@@ -3355,26 +4932,50 @@ export interface components {
             variables?: {
                 [key: string]: unknown;
             };
-            generation_id?: number | null;
+            generation_provenance?: components["schemas"]["GenerationProvenance"];
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
             updated_at?: string;
         };
-        EmailStarter: {
+        /**
+         * @description Candidate-bound generation evidence. Save endpoints accept only
+         *     `state: candidate` values returned by the generation endpoint. Resource
+         *     responses may return `state: accepted` as read-only history.
+         */
+        GenerationProvenance: {
+            /** @enum {string} */
+            state: "candidate" | "accepted";
+            event_id: number;
+            candidate_locator?: string;
+            generated_slice_digest?: string;
+            acceptance_id?: number;
+            saved_authored_digest?: string;
+            /** @enum {string} */
+            edit_relation?: "identical" | "edited";
+        };
+        EmailLibraryTemplate: {
             id?: string;
-            category?: string;
             name?: string;
+            category?: string;
+            tags?: string[];
             description?: string;
-            icon?: string;
-            suggested_goals?: string[];
+            /** @description Suggested subject line */
+            subject?: string;
+            /** @description Suggested preheader */
+            preheader?: string;
             design?: components["schemas"]["EmailDesign"];
             preview_html?: string | null;
+            /** @description Same layout with palette overrides stripped so brand colors apply */
+            branded_design?: components["schemas"]["EmailDesign"];
+            branded_preview_html?: string | null;
         };
         TemplateSummary: {
             id?: number;
             name?: string | null;
             version?: number;
+            /** @description Rendered preview, present only with ?include_previews=1 */
+            preview_html?: string | null;
             subject?: string | null;
             preheader?: string | null;
             flow_id?: number | null;
@@ -3666,7 +5267,7 @@ export interface components {
              * @description Machine-readable reason the default visible From domain is or is not authorized.
              * @enum {string}
              */
-            sender_authorization_reason?: "missing_sender_domain" | "sandbox_domain" | "exact_inbox" | "shared_domain_requires_exact_inbox" | "shared_domain_not_verified" | "platform_domain" | "sender_domain_not_authorized" | "sending_domain" | "unaligned_apex_supported" | "author_identity_not_verified" | "author_domain_unaligned" | "author_domain" | "sender_domain_mismatch";
+            sender_authorization_reason?: "missing_sender_domain" | "exact_inbox" | "shared_domain_requires_exact_inbox" | "shared_domain_not_verified" | "platform_domain" | "sender_domain_not_authorized" | "sending_domain" | "unaligned_apex_supported" | "author_identity_not_verified" | "author_domain_unaligned" | "author_domain" | "sender_domain_mismatch";
             integration_id?: number | null;
             /** @enum {string} */
             status?: "pending" | "verified";
@@ -3727,9 +5328,9 @@ export interface components {
         Integration: {
             id?: number;
             /** @enum {string} */
-            provider?: "mailgun" | "ses" | "postmark" | "resend" | "sendgrid" | "twilio" | "attio" | "hubspot";
+            provider?: "mailgun" | "ses" | "postmark" | "resend" | "sendgrid" | "twilio" | "attio" | "hubspot" | "mailchimp" | "stripe" | "shopify" | "apollo";
             /** @enum {string} */
-            category?: "email" | "sms" | "crm";
+            category?: "email" | "sms" | "crm" | "revenue" | "ecommerce" | "data";
             active?: boolean;
             primary?: boolean;
             /** @enum {string} */
@@ -3750,8 +5351,98 @@ export interface components {
             /** Format: date-time */
             updated_at?: string;
         };
+        ShopifyMerchantCredentialRequest: {
+            shopify: {
+                /** @description Permanent myshopify.com domain or shop slug. */
+                shop: string;
+                /** @description Client ID for the merchant-owned Shopify app. */
+                client_id: string;
+                /**
+                 * Format: password
+                 * @description Client secret for the merchant-owned Shopify app.
+                 */
+                client_secret: string;
+            };
+        };
         IntegrationWriteRequest: {
             integration: components["schemas"]["MailgunIntegrationInput"] | components["schemas"]["SesIntegrationInput"] | components["schemas"]["PostmarkIntegrationInput"] | components["schemas"]["ResendIntegrationInput"] | components["schemas"]["SendgridIntegrationInput"];
+        };
+        IntegrationSyncConfiguration: {
+            integration_id: number;
+            provider: string;
+            sync_contract: components["schemas"]["IntegrationSyncContract"];
+        };
+        IntegrationSyncContract: {
+            /** @enum {integer} */
+            version: 1;
+            mirror_lists: boolean;
+            /** Format: date-time */
+            updated_at?: string | null;
+            objects: components["schemas"]["IntegrationSyncObjectSelection"][];
+        };
+        IntegrationSyncObjectSelection: {
+            object_id?: string;
+            object_slug: string;
+            label?: string;
+            /** @enum {string} */
+            mode: "addressable" | "related";
+            /** @default true */
+            enabled: boolean;
+            /** @enum {string} */
+            field_policy?: "all_supported" | "selected";
+            selected_fields?: string[];
+            excluded_fields?: string[];
+            relationship?: {
+                attribute_slug?: string;
+                /** @enum {string} */
+                target_object_slug?: "people" | "users";
+            };
+            trait_mapping?: components["schemas"]["IntegrationSyncTraitMapping"];
+            managed_audience_mapping_key?: string;
+            mirror_lists?: boolean;
+        };
+        IntegrationSyncTraitMapping: {
+            /** @enum {string} */
+            kind: "deal_pipeline";
+            stage_attribute: string;
+            closed_stage_values: string[];
+            amount_attribute?: string;
+            currency_attribute?: string;
+        };
+        IntegrationSyncConfigurationWriteRequest: {
+            sync_contract: components["schemas"]["IntegrationSyncContract"];
+        };
+        IntegrationSyncDiscovery: {
+            provider: string;
+            /** @enum {integer} */
+            version: 1;
+            truncated: boolean;
+            objects: {
+                object_id: string;
+                object_slug: string;
+                singular_noun?: string;
+                plural_noun?: string;
+                eligible: boolean;
+                /** @enum {string|null} */
+                recommended_mode?: "addressable" | "related" | null;
+                ineligible_reason?: string | null;
+                attributes_truncated?: boolean;
+                attributes: components["schemas"]["IntegrationSyncDiscoveredAttribute"][];
+                relationship_attributes?: components["schemas"]["IntegrationSyncDiscoveredAttribute"][];
+            }[];
+        };
+        IntegrationSyncDiscoveredAttribute: {
+            attribute_id: string;
+            attribute_slug: string;
+            title?: string;
+            type: string;
+            /** @enum {string} */
+            classification: "canonical_scalar" | "fact_only" | "relationship";
+            required?: boolean;
+            unique?: boolean;
+            multiselect?: boolean;
+            target_object_slugs?: string[];
+            options?: string[];
         };
         MailgunIntegrationInput: {
             /** @enum {string} */
@@ -3802,9 +5493,11 @@ export interface components {
             id?: number;
             name?: string;
             active?: boolean;
+            entitlements?: components["schemas"]["BillingEntitlements"];
         };
         /** @description Email template design document */
         EmailDesign: {
+            version?: number;
             sections?: components["schemas"]["EmailSection"][];
             /** @description Theme overrides merged on top of brand theme */
             theme?: {
@@ -4019,6 +5712,24 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        /** @description Request conflicts with durable lifecycle or idempotency state */
+        Conflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description One-time capability is invalid, expired, rotated, or consumed */
+        Gone: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description Validation failed */
         ValidationError: {
             headers: {
@@ -4050,9 +5761,27 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        /** @description Delivery admission is temporarily deferred; retry the same idempotent request at or after `retry_at` */
+        AdmissionDeferred: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"] & {
+                    /** @enum {string} */
+                    error_code: "delivery_evidence_pending";
+                    /** @constant */
+                    retryable: true;
+                    /** Format: date-time */
+                    retry_at: string;
+                };
+            };
+        };
     };
     parameters: {
         ResourceId: number;
+        /** @description Opaque paid-operation continuation identifier. */
+        PaidActionIntentId: string;
         /** @description Brand secure identifier */
         BrandSid: string;
         PageParam: number;
@@ -4070,6 +5799,8 @@ export interface components {
          *     ignore this header.
          */
         XAccountID: number;
+        /** @description Exact-request idempotency key; changed normalized input conflicts. */
+        IdempotencyKey: string;
     };
     requestBodies: never;
     headers: never;
@@ -4344,8 +6075,7 @@ export interface operations {
                 "application/json": {
                     first_name?: string;
                     last_name?: string;
-                    /** Format: email */
-                    email?: string;
+                    email?: string | string[];
                     mobile?: string;
                     time_zone?: string | null;
                 };
@@ -4406,6 +6136,68 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
         };
     };
+    getMyAffiliate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Affiliate Center payload or temporary setup state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AffiliateCenterPayload"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    reconcileMyAffiliate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    first_name?: string;
+                    last_name?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Existing or already-linked affiliate */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AffiliateCenterPayload"];
+                };
+            };
+            /** @description Affiliate identity linked to the account */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AffiliateCenterPayload"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
     getAccount: {
         parameters: {
             query?: never;
@@ -4457,6 +6249,145 @@ export interface operations {
             422: components["responses"]["ValidationError"];
         };
     };
+    getDeliveryStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current email sender-capacity and pacing projection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryStatus"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    quoteEmailValidation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidationAudience"];
+            };
+        };
+        responses: {
+            /** @description Non-mutating validation quote */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationOperationQuote"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createEmailValidationOperation: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Exact-request idempotency key; changed normalized input conflicts. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidationAudience"];
+            };
+        };
+        responses: {
+            /** @description Durable validation operation accepted or replayed */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationOperation"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getEmailValidationOperation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque operation_id returned by the create endpoint. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current durable operation state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationOperation"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listEmailValidationOperationItems: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                per?: components["parameters"]["PerParam"];
+            };
+            header?: never;
+            path: {
+                /** @description Opaque operation_id returned by the create endpoint. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated operation items */
+            200: {
+                headers: {
+                    "X-Total-Count"?: number;
+                    "X-Total-Pages"?: number;
+                    "X-Page-Number"?: number;
+                    "X-Next-Page"?: number;
+                    "X-Prev-Page"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationOperationItem"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     listAccounts: {
         parameters: {
             query?: {
@@ -4479,6 +6410,640 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Account"][];
+                };
+            };
+        };
+    };
+    listManagedAccounts: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                per?: number;
+                q?: string;
+                /** @description Use needs_setup to group preparing, awaiting owner, payment required, and payment issue rows. */
+                status?: components["schemas"]["ManagedAccountLifecycleStatusFilter"];
+                sort?: "created_at" | "name" | "owner_email" | "status";
+                direction?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded managed-client portfolio */
+            200: {
+                headers: {
+                    "X-Total-Count"?: number;
+                    "X-Total-Pages"?: number;
+                    "X-Page-Number"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountProvisioning"][];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createManagedAccount: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Exact-request idempotency key; changed normalized input conflicts. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardManagedAccountCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Exact idempotent replay */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountProvisioningCreated"];
+                };
+            };
+            /** @description Client provisioned in preparing state; no owner invitation has been sent */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountProvisioningCreated"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getManagedAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Managed-client portfolio row */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountProvisioning"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    resendManagedAccountInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated portfolio row; no invitation capability is returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountProvisioning"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    sendManagedAccountInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated portfolio row; no invitation capability is returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountProvisioning"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    remindManagedAccountPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reminder accepted for delivery */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    releaseManagedAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ended managed-client relationship */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountProvisioning"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listAccountProvisioningCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Provisioning credential metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountProvisioningCredential"][];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createAccountProvisioningCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountProvisioningCredentialCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description One-time credential result */
+            201: {
+                headers: {
+                    /** @description Always includes no-store */
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountProvisioningCredentialIssued"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    revokeAccountProvisioningCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked credential metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountProvisioningCredential"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    inspectManagedAccountClaim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManagedAccountClaimRequest"];
+            };
+        };
+        responses: {
+            /** @description Bounded claim projection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountClaimInspection"];
+                };
+            };
+            410: components["responses"]["Gone"];
+        };
+    };
+    completeManagedAccountClaim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManagedAccountClaimCompletionRequest"];
+            };
+        };
+        responses: {
+            /** @description Consent recorded; status remains payment_required until paid activation */
+            200: {
+                headers: {
+                    /** @description Always includes no-store */
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountClaimCompletion"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            410: components["responses"]["Gone"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    listPartnerManagedAccounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Managed-client portfolio */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountProvisioning"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createPartnerManagedAccount: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Exact-request idempotency key; changed normalized input conflicts. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PartnerManagedAccountCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Exact idempotent replay */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountProvisioningCreated"];
+                };
+            };
+            /** @description Client provisioned in preparing state; no owner invitation has been sent */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountProvisioningCreated"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getPartnerManagedAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Managed-client portfolio row */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountProvisioning"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    resendPartnerManagedAccountInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated portfolio row; no invitation capability is returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountProvisioning"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    sendPartnerManagedAccountInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated portfolio row; no invitation capability is returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAccountProvisioning"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listPartnerManagedAccountCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Manager-scoped provisioning row id. */
+                provisioning_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agent credential metadata; plaintext secrets are never listed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountManagementCredential"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createPartnerManagedAccountCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Manager-scoped provisioning row id. */
+                provisioning_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountManagementCredentialCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description One-time credential result; the secret cannot be recovered */
+            201: {
+                headers: {
+                    /** @description Always includes no-store */
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountManagementCredentialIssued"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    revokePartnerManagedAccountCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Manager-scoped provisioning row id. */
+                provisioning_id: number;
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked credential metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountManagementCredential"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getCurrentAccountManagementGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current management grant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountManagementGrant"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    confirmAccountManagementGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountManagementGrantCommand"];
+            };
+        };
+        responses: {
+            /** @description Active management grant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountManagementGrant"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The grant cannot transition from its current state */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    revokeAccountManagementGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountManagementGrantCommand"];
+            };
+        };
+        responses: {
+            /** @description Revoked management grant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountManagementGrant"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The grant cannot transition from its current state */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4629,6 +7194,72 @@ export interface operations {
                 };
             };
             422: components["responses"]["ValidationError"];
+        };
+    };
+    checkoutSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    plan_id: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Subscription changed without external approval */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Provider-hosted checkout created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Billing provider is not ready for checkout */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Shopify rejected the requested billing terms */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Shopify billing could not be reached */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     previewSubscriptionCoupon: {
@@ -5012,34 +7643,90 @@ export interface operations {
             422: components["responses"]["ValidationError"];
         };
     };
-    enrichContact: {
+    quoteContactProfileEnrichment: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: number;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    contact_ids: number[];
+                };
+            };
+        };
         responses: {
-            /** @description Enrichment queued */
+            /** @description Exact maximum-charge quote and work classification */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Contact"];
+                    "application/json": components["schemas"]["ContactEnrichmentQuote"];
                 };
             };
-            /** @description Contact has no email or validation allowance exhausted */
-            400: {
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    enrichContactProfiles: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    contact_ids: number[];
+                };
+            };
+        };
+        responses: {
+            /** @description Exact idempotent replay */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ContactEnrichmentDispatch"];
+                };
             };
+            /** @description Enrichment queued */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContactEnrichmentDispatch"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            /** @description Account funding changed before the enrichment hold was created */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContactEnrichmentFundingRequired"];
+                };
+            };
+            /** @description Idempotency-Key reused with different Contact IDs */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
         };
     };
     getContactTimeline: {
@@ -5068,6 +7755,55 @@ export interface operations {
                     "application/json": {
                         entries?: components["schemas"]["TimelineEntry"][];
                         next_cursor?: string | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getContactEnrichment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The contact's resolved enrichment rows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        rows?: {
+                            key?: string;
+                            value?: unknown;
+                            /** @enum {string} */
+                            group?: "professional" | "company" | "location" | "contact_intelligence" | "other";
+                            /** @description Human-readable value using the field catalog's shared presentation contract. */
+                            display_value?: string;
+                            value_type?: string;
+                            confidence?: number | null;
+                            stale?: boolean;
+                            /** Format: date-time */
+                            synced_at?: string | null;
+                            /** @description Present only for facts from a connected integration. */
+                            integration_label?: string | null;
+                        }[];
+                        field_count?: number;
+                        summary?: {
+                            field_count?: number;
+                            stale_count?: number;
+                            /** Format: date-time */
+                            latest_synced_at?: string | null;
+                            groups?: {
+                                [key: string]: number;
+                            };
+                        };
                     };
                 };
             };
@@ -6180,6 +8916,7 @@ export interface operations {
                         from_email?: string;
                         /** Format: email */
                         reply_to?: string;
+                        generation_provenance?: components["schemas"]["GenerationProvenance"];
                         design?: components["schemas"]["EmailDesign"];
                     };
                 };
@@ -6292,7 +9029,9 @@ export interface operations {
     sendCampaignTestEmail: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
             path: {
                 id: components["parameters"]["ResourceId"];
             };
@@ -6306,6 +9045,8 @@ export interface operations {
                     emails?: string[];
                     send_test_to?: string[];
                     contact_id?: number;
+                    /** @description Contact whose projected data personalizes the test without changing the test recipient. */
+                    sample_contact_id?: number;
                 };
             };
         };
@@ -6341,40 +9082,20 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Required when trigger_attributes.audience_type or the saved trigger audience_type is all_contacts. */
+                    /**
+                     * Format: date-time
+                     * @description Exact campaign.updated_at value from the persisted draft being approved for delivery.
+                     */
+                    expected_campaign_updated_at: string;
+                    /** @description Exact persisted campaign template version being approved for delivery. */
+                    template_if_version: number;
+                    /**
+                     * Format: date-time
+                     * @description Future delivery time. Omit for immediate delivery.
+                     */
+                    deliver_at?: string;
+                    /** @description Required when the persisted audience is all_contacts. */
                     confirm_send_to_all?: boolean;
-                    trigger_attributes?: {
-                        event?: string;
-                        /**
-                         * @description Explicit campaign audience target. Use all_contacts only for deliberate all-subscribed-contact sends.
-                         * @enum {string|null}
-                         */
-                        audience_type?: "lists" | "segment" | "all_contacts" | null;
-                        /** @deprecated */
-                        contact_list_id?: number | null;
-                        contact_list_ids?: number[];
-                        segment_id?: number | null;
-                        /** @description Segment IDs whose matching contacts are excluded; pass [] to clear */
-                        exclude_segment_ids?: number[];
-                        /** @description Contact list IDs whose members are excluded; pass [] to clear */
-                        exclude_contact_list_ids?: number[];
-                        data?: {
-                            [key: string]: unknown;
-                        };
-                    };
-                    template_attributes?: {
-                        /** @description Required optimistic concurrency token for template content writes. Use the current template.version. A stale value returns 409 with current_version and expected_version. */
-                        if_version: number;
-                        subject?: string;
-                        body?: string;
-                        preheader?: string;
-                        from_name?: string;
-                        /** Format: email */
-                        from_email?: string;
-                        /** Format: email */
-                        reply_to?: string;
-                        design?: components["schemas"]["EmailDesign"];
-                    };
                 };
             };
         };
@@ -6405,6 +9126,10 @@ export interface operations {
             query?: {
                 page?: number;
                 per?: number;
+                /** @description Use `standalone` for reusable library templates. Omit or use `all` to retain the complete designed-template result. */
+                scope?: "all" | "standalone";
+                /** @description When set, each summary includes rendered preview_html (cached per template version) */
+                include_previews?: boolean;
             };
             header?: never;
             path?: never;
@@ -6429,17 +9154,19 @@ export interface operations {
     createTemplate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
             path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
                 "application/json": {
-                    name: string;
+                    name?: string;
                     subject?: string;
                     preheader?: string;
-                    generation_id?: number | null;
+                    generation_provenance?: components["schemas"]["GenerationProvenance"];
                     /** @description Required optimistic concurrency token. Use the current template.version. */
                     if_version?: number;
                     design?: components["schemas"]["EmailDesign"];
@@ -6447,6 +9174,15 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Exact idempotent replay of an existing template */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Template"];
+                };
+            };
             /** @description Created template */
             201: {
                 headers: {
@@ -6456,7 +9192,8 @@ export interface operations {
                     "application/json": components["schemas"]["Template"];
                 };
             };
-            /** @description Template version conflict */
+            400: components["responses"]["BadRequest"];
+            /** @description Idempotency-Key reused with changed input */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6553,7 +9290,7 @@ export interface operations {
                     from_email?: string;
                     /** Format: email */
                     reply_to?: string;
-                    generation_id?: number | null;
+                    generation_provenance?: components["schemas"]["GenerationProvenance"];
                     design?: components["schemas"]["EmailDesign"];
                 };
             };
@@ -6610,7 +9347,9 @@ export interface operations {
     sendTestEmail: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
             path: {
                 id: components["parameters"]["ResourceId"];
             };
@@ -6619,9 +9358,12 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** Format: email */
-                    email?: string;
+                    email?: string | string[];
+                    emails?: string[];
+                    send_test_to?: string[];
                     contact_id?: number;
+                    /** @description Contact whose projected data personalizes the test without changing the test recipient. */
+                    sample_contact_id?: number;
                 };
             };
         };
@@ -6695,7 +9437,7 @@ export interface operations {
             };
         };
     };
-    listEmailStarters: {
+    listEmailTemplateLibrary: {
         parameters: {
             query?: never;
             header?: never;
@@ -6704,13 +9446,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Starter designs with brand theme and preview HTML */
+            /** @description Library templates with original and brand-matched variants */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EmailStarter"][];
+                    "application/json": components["schemas"]["EmailLibraryTemplate"][];
                 };
             };
         };
@@ -6718,7 +9460,10 @@ export interface operations {
     generateEmailTemplate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Retry-stable identity for this generation request. */
+                "Idempotency-Key": string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -6730,12 +9475,63 @@ export interface operations {
                      * @example Welcome new subscribers and introduce the brand
                      */
                     goal: string;
+                    /** @enum {string} */
+                    operation: "generate" | "regenerate" | "refine";
+                    /**
+                     * @description Defaults to copy for refine and both otherwise.
+                     * @enum {string}
+                     */
+                    edit_scope?: "copy" | "design" | "both";
+                    user_instruction?: string;
                     /** @description Optional category hint (welcome, newsletter, promotion, etc.) */
                     category?: string;
                     /** @description Optional tone override (formal, casual, etc.) */
                     tone?: string;
-                    /** @description Current sections for refine mode — LLM adjusts existing content */
-                    sections?: Record<string, never>[];
+                    /** @description Complete unsaved editor state to generate or refine. */
+                    current_draft: {
+                        subject?: string;
+                        preheader?: string;
+                        body?: string;
+                        /** @enum {string} */
+                        plain_text_mode: "derived" | "custom";
+                        from_name?: string;
+                        from_email?: string;
+                        reply_to?: string;
+                        design: {
+                            version?: number;
+                            theme?: {
+                                [key: string]: unknown;
+                            };
+                            sections: {
+                                [key: string]: unknown;
+                            }[];
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    } | {
+                        name?: string;
+                        trigger: components["schemas"]["FlowTriggerInput"];
+                        steps: components["schemas"]["FlowStepInput"][];
+                    };
+                    authoring_target: {
+                        /** @constant */
+                        surface: "template";
+                        template_id?: number;
+                        /** @description Required when template_id is present. */
+                        if_version?: number;
+                    } | {
+                        /** @constant */
+                        surface: "campaign";
+                        campaign_id: number;
+                        template_id?: number;
+                        if_version: number;
+                    } | {
+                        /** @constant */
+                        surface: "flow";
+                        flow_id: number;
+                        action_name: string;
+                        if_version: number;
+                    };
                 };
             };
         };
@@ -6751,9 +9547,48 @@ export interface operations {
                         design?: Record<string, never>;
                         subject?: string;
                         preheader?: string;
+                        body?: string;
+                        /** @enum {string} */
+                        plain_text_mode?: "derived" | "custom";
                         /** @description Inferred or provided category */
                         category?: string;
                         prompt_version?: string;
+                        generation_provenance?: components["schemas"]["GenerationProvenance"];
+                        knowledge_used?: string[];
+                    };
+                };
+            };
+            /** @description Invalid authoring request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        code: "idempotency_key_required" | "invalid_authoring_request";
+                        /** @enum {string} */
+                        error_code: "idempotency_key_required" | "invalid_authoring_request";
+                        message: string;
+                        /** @constant */
+                        error: true;
+                    };
+                };
+            };
+            /** @description Generation or template version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        code: "template_version_conflict" | "idempotency_conflict" | "generation_in_progress" | "generation_replay_invalid";
+                        /** @enum {string} */
+                        error_code: "template_version_conflict" | "idempotency_conflict" | "generation_in_progress" | "generation_replay_invalid";
+                        message: string;
+                        /** @constant */
+                        error: true;
                     };
                 };
             };
@@ -6817,7 +9652,9 @@ export interface operations {
     createFlow: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -6825,14 +9662,21 @@ export interface operations {
             content: {
                 "application/json": {
                     name: string;
-                    /** @enum {string} */
-                    status?: "draft" | "live" | "paused" | "archived" | "cancelled";
                     trigger?: components["schemas"]["FlowTriggerInput"];
                     steps?: components["schemas"]["FlowStepInput"][];
                 };
             };
         };
         responses: {
+            /** @description Exact idempotent replay of an existing flow */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Flow"];
+                };
+            };
             /** @description Flow created */
             201: {
                 headers: {
@@ -6840,6 +9684,16 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Flow"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            /** @description Idempotency-Key reused with changed input */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
             422: components["responses"]["ValidationError"];
@@ -6905,6 +9759,12 @@ export interface operations {
                     name?: string;
                     /** @enum {string} */
                     status?: "draft" | "live" | "paused" | "archived" | "cancelled";
+                    /** @enum {string} */
+                    approval_state?: "approved" | "rejected";
+                    /** @description Required with flow approval_state control and with status=live publication. Omit to resume the current active revision. */
+                    revision_id?: number | null;
+                    /** @description Exact optimistic concurrency token for authored graph changes. */
+                    expected_draft_revision_id?: number | null;
                     /**
                      * Format: date-time
                      * @description Optimistic concurrency check
@@ -6912,6 +9772,7 @@ export interface operations {
                     updated_at?: string;
                     trigger?: components["schemas"]["FlowTriggerInput"];
                     steps?: components["schemas"]["FlowStepInput"][];
+                    generation_provenance?: components["schemas"]["GenerationProvenance"];
                 };
             };
         };
@@ -6925,7 +9786,7 @@ export interface operations {
                     "application/json": components["schemas"]["Flow"];
                 };
             };
-            /** @description Conflict — flow was modified externally, or live activation was already accepted (`duplicate_flow_live`) */
+            /** @description Conflict — the authored draft or requested publication revision is stale */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -7255,7 +10116,10 @@ export interface operations {
     };
     deleteDomain: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Confirm teardown of an identity pair after reviewing the paired-domain 422 response. */
+                unpair?: boolean;
+            };
             header?: never;
             path: {
                 id: components["parameters"]["ResourceId"];
@@ -7271,6 +10135,22 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Domain is paired or still has dependent inboxes */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"] & {
+                        /** @enum {string} */
+                        reason?: "domain_paired" | "domain_in_use";
+                        domain_id?: number;
+                        paired_with?: string;
+                        counterpart_removed?: boolean;
+                    };
+                };
+            };
+            503: components["responses"]["ServiceUnavailable"];
         };
     };
     verifyDomain: {
@@ -7499,6 +10379,85 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    getIntegrationSyncConfiguration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                integration_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Safe sync configuration */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationSyncConfiguration"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateIntegrationSyncConfiguration: {
+        parameters: {
+            query?: {
+                confirm_deselection?: boolean;
+            };
+            header?: never;
+            path: {
+                integration_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegrationSyncConfigurationWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated safe sync configuration */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationSyncConfiguration"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    discoverIntegrationSyncConfiguration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                integration_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sync configuration and bounded provider discovery metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationSyncConfiguration"] & {
+                        discovery: components["schemas"]["IntegrationSyncDiscovery"];
+                    };
+                };
+            };
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
     connectAttioIntegration: {
         parameters: {
             query?: never;
@@ -7581,6 +10540,54 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             422: components["responses"]["ValidationError"];
+        };
+    };
+    connectShopifyMerchantCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShopifyMerchantCredentialRequest"];
+            };
+        };
+        responses: {
+            /** @description Existing merchant-managed Shopify connection replaced */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+            /** @description Merchant-managed Shopify connection created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Missing fields, invalid credentials, missing scopes, or a shop ownership conflict */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"] & {
+                        missing_scopes?: ("read_customers" | "read_orders" | "read_products")[];
+                        validation_errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
         };
     };
     connectStripeIntegration: {
@@ -7750,6 +10757,156 @@ export interface operations {
                 content: {
                     "text/html": string;
                 };
+            };
+        };
+    };
+    receiveShopifyAppStoreWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Shopify-Hmac-Sha256": string;
+                "X-Shopify-Shop-Domain": string;
+                "X-Shopify-Topic": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Verified webhook acknowledged */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid JSON payload */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid App Store HMAC */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Verified webhook could not be applied */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    receiveShopifyMerchantWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Shopify-Hmac-Sha256": string;
+                "X-Shopify-Shop-Domain": string;
+                "X-Shopify-Topic": string;
+                "X-Shopify-Webhook-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Verified supported webhook processed or unsupported topic safely acknowledged */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Verified supported webhook contained invalid JSON */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Webhook could not be authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Verified webhook could not be applied */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    receiveShopifyAppWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Shopify-Hmac-Sha256": string;
+                "X-Shopify-Shop-Domain": string;
+                "X-Shopify-Topic": string;
+            };
+            path: {
+                app_key: "custom";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Verified webhook acknowledged */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid JSON payload */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid app-specific HMAC */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Verified webhook could not be applied */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -8079,6 +11236,10 @@ export interface operations {
                     email_from_email?: string;
                     /** Format: email */
                     email_reply_to?: string;
+                    /** @description Ready brand-owned email sending identity to select through the canonical sender-selection authority. */
+                    sender_identity_id?: number;
+                    /** @description Visible From local part for the selected sending identity. */
+                    sender_local_part?: string;
                     test_email_recipients?: string[];
                     example_copy?: string[];
                     links?: {
@@ -8110,6 +11271,47 @@ export interface operations {
                 };
             };
             422: components["responses"]["ValidationError"];
+        };
+    };
+    prepareBrandSending: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Brand secure identifier */
+                sid: components["parameters"]["BrandSid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The brand-subdomain sender is already ready */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrandSubdomainPreparationResponse"];
+                };
+            };
+            /** @description Sender preparation was accepted and is asynchronous */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrandSubdomainPreparationResponse"];
+                };
+            };
+            /** @description The account, brand, rate, or infrastructure state is not eligible for preparation */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     getBrandDeletionSafety: {
@@ -8352,7 +11554,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Prevents duplicate sends on retry. The same key with the same payload returns the original message; the same key with a different payload returns 409. */
+                /** @description Strongly recommended; mandatory from 2026-09-01 unless idempotency_key is supplied in the body. Prevents duplicate sends on retry. The same key with the same payload returns the original message; the same key with a different payload returns 409. Before the cutoff, keyless requests succeed with Deprecation and Sunset response headers. */
                 "Idempotency-Key"?: string;
             };
             path?: never;
@@ -8395,7 +11597,7 @@ export interface operations {
                     data?: {
                         [key: string]: unknown;
                     };
-                    /** @description Idempotency key (alternative to header) */
+                    /** @description Stable idempotency key (alternative to header). Strongly recommended; mandatory from 2026-09-01. */
                     idempotency_key?: string;
                 };
             };
@@ -8413,13 +11615,26 @@ export interface operations {
             /** @description Message created */
             201: {
                 headers: {
+                    /** @description Present only on accepted keyless requests before the cutoff (RFC 9745). Value is the deprecation date, e.g. "@1785196800". */
+                    Deprecation?: string;
+                    /** @description Present only on accepted keyless requests before the cutoff (RFC 8594). Keyless sends are rejected from this date: "Tue, 01 Sep 2026 00:00:00 GMT". */
+                    Sunset?: string;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["Message"];
                 };
             };
-            /** @description Idempotency key was already used with a different payload */
+            /** @description Missing required idempotency key (enforced from 2026-09-01). Before the cutoff, keyless requests are accepted with Deprecation and Sunset headers. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Idempotency conflict or sender preparation deferral; no new message is retained in either case */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -8431,12 +11646,23 @@ export interface operations {
                         message?: string;
                         /** @example true */
                         error?: boolean;
-                        /** @example idempotency_conflict */
-                        error_code?: string;
+                        /** @enum {string} */
+                        error_code?: "idempotency_conflict";
+                    } | {
+                        /** @enum {string} */
+                        code: "sender_identity_provisioning" | "sender_identity_selection_required";
+                        message: string;
+                        /** @constant */
+                        error: true;
+                        /** @enum {string} */
+                        error_code: "sender_identity_provisioning" | "sender_identity_selection_required";
+                        retryable: boolean;
+                        brand_subdomain: components["schemas"]["BrandSubdomain"];
                     };
                 };
             };
             422: components["responses"]["ValidationError"];
+            503: components["responses"]["AdmissionDeferred"];
         };
     };
     getMessage: {
@@ -8611,6 +11837,139 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    createPaidActionIntent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaidActionIntentCreate"];
+            };
+        };
+        responses: {
+            /** @description Exact idempotent replay */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidActionIntent"];
+                };
+            };
+            /** @description Continuation created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidActionIntent"];
+                };
+            };
+            /** @description Operation key reused with different continuation state */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getPaidActionIntent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque paid-operation continuation identifier. */
+                id: components["parameters"]["PaidActionIntentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Actor-scoped continuation with current terms */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidActionIntent"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    cancelPaidActionIntent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque paid-operation continuation identifier. */
+                id: components["parameters"]["PaidActionIntentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cancelled continuation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidActionIntent"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            /** @description Terminal continuation cannot be cancelled */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    consumePaidActionIntent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque paid-operation continuation identifier. */
+                id: components["parameters"]["PaidActionIntentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Consumed continuation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidActionIntent"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            /** @description Continuation is not ready to consume */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     createPublicContact: {
         parameters: {
             query?: never;
@@ -8684,6 +12043,199 @@ export interface operations {
                     };
                 };
             };
+        };
+    };
+    listOperatorSupportRequests: {
+        parameters: {
+            query?: {
+                status?: string;
+                due_only?: boolean;
+                account_id?: number;
+                brand_id?: number;
+                page?: components["parameters"]["PageParam"];
+                limit?: components["parameters"]["LimitParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated support queue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperatorSupportRequest"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getOperatorSupportRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Support request, customer account, brand, and latest reply ledger state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperatorSupportCase"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    diagnoseOperatorSupportRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current sending, DNS, campaign, and message evidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    draftOperatorSupportReply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    body: string;
+                    runx_receipt_id?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Draft persisted in the reply ledger */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperatorReplyDraft"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    sendOperatorSupportReply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    thread_record_id: number;
+                    draft_version: number;
+                    /** @constant */
+                    confirm: true;
+                };
+            };
+        };
+        responses: {
+            /** @description Reply delivered */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperatorReplyDraft"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    dispositionOperatorSupportRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    status: "open" | "waiting" | "resolved";
+                    /**
+                     * @description Explicit confirmation of the disposition mutation.
+                     * @enum {boolean}
+                     */
+                    confirm: true;
+                    /**
+                     * Format: date-time
+                     * @description Required only for waiting.
+                     */
+                    follow_up_at?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated support request */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperatorSupportRequest"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
 }
