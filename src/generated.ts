@@ -3443,33 +3443,29 @@ export interface components {
             access?: components["schemas"]["AccountAccess"];
             /** @description Present for direct access and omitted from delegated account-list projections. */
             billing?: {
-                /** @enum {string} */
-                access_policy?: "free_allowed" | "paid_required";
-                plan_name?: string;
-                overage?: Record<string, never>;
+                /** @enum {string|null} */
+                access_policy: "free_allowed" | "paid_required" | null;
+                plan_name?: string | null;
+                plan?: components["schemas"]["Plan"] | null;
+                spend_cap_monthly_cents?: number | null;
+                comped?: boolean;
+                overage?: {
+                    [key: string]: unknown;
+                };
                 entitlements?: components["schemas"]["BillingEntitlements"];
                 resources?: {
-                    email?: {
-                        used?: number;
-                        allowance?: number;
-                        remaining?: number;
-                        overage_rate?: number;
-                    };
-                    sms?: {
-                        used?: number;
-                        allowance?: number;
-                        remaining?: number;
-                        overage_rate?: number;
-                    };
-                    ai?: {
-                        used?: number;
-                        allowance?: number;
-                        remaining?: number;
-                        overage_rate?: number;
-                    };
+                    email?: components["schemas"]["AccountResourceUsage"];
+                    sms?: components["schemas"]["AccountResourceUsage"];
+                    ai?: components["schemas"]["AccountResourceUsage"];
+                };
+                funding: {
+                    [key: string]: unknown;
+                };
+                provider_route: {
+                    [key: string]: unknown;
                 };
                 /** @description Per-account brand-count headroom. Usage for email, SMS, and AI remains pooled at the account level; only brand count is capped here. A limit of 0 with unlimited=true means unlimited brands. */
-                brands?: {
+                brands: {
                     used?: number;
                     /** @description Raw plan max_brands value. 0 means unlimited when unlimited is true. */
                     limit?: number;
@@ -3499,6 +3495,16 @@ export interface components {
             created_at?: string;
             /** Format: date-time */
             updated_at?: string;
+        };
+        AccountResourceUsage: {
+            used: number;
+            allowance: number | null;
+            remaining: number | null;
+            overage_rate: number;
+            /** @enum {string} */
+            mode: "budget" | "monthly" | "unlimited";
+            budget: number | null;
+            budget_used: number;
         };
         AccountAccess: {
             /** @enum {string} */
@@ -11072,10 +11078,7 @@ export interface operations {
                     heading_size?: number | null;
                     body_size?: number | null;
                     brand_document?: string | null;
-                    style_notes?: string;
-                    tone?: string;
                     company_description?: string;
-                    industry?: string;
                     physical_address?: string;
                     company_name?: string;
                     /** @description Signed blob ID or URL */
@@ -11087,7 +11090,6 @@ export interface operations {
                     email_reply_to?: string;
                     email_view_online?: boolean;
                     test_email_recipients?: string[];
-                    example_copy?: string[];
                     links?: {
                         /** Format: uri */
                         url?: string;
@@ -11228,6 +11230,8 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    /** @description Internal brand name; mirrors company_name when company_name is omitted */
+                    name?: string;
                     brand_color?: string;
                     text_color?: string;
                     bg_color?: string;
@@ -11239,10 +11243,7 @@ export interface operations {
                     heading_size?: number | null;
                     body_size?: number | null;
                     brand_document?: string | null;
-                    style_notes?: string;
-                    tone?: string;
                     company_description?: string;
-                    industry?: string;
                     physical_address?: string;
                     company_name?: string;
                     /** @description Signed blob ID or URL */
@@ -11252,12 +11253,12 @@ export interface operations {
                     email_from_email?: string;
                     /** Format: email */
                     email_reply_to?: string;
+                    email_view_online?: boolean;
                     /** @description Ready brand-owned email sending identity to select through the canonical sender-selection authority. */
                     sender_identity_id?: number;
                     /** @description Visible From local part for the selected sending identity. */
                     sender_local_part?: string;
                     test_email_recipients?: string[];
-                    example_copy?: string[];
                     links?: {
                         /** Format: uri */
                         url?: string;
