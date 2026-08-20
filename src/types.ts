@@ -2,25 +2,94 @@
 // Response types (from API serializer schemas)
 // =============================================================================
 
+export type CommercialTier = 'unsubscribed' | 'free' | 'pro' | 'ultra' | 'enterprise';
+
+export interface AccountAccess {
+  source: 'owner' | 'membership' | 'platform_admin' | 'delegated' | 'management_credential' | 'api_key' | 'shopify';
+  delegated: boolean;
+  managerAccountId?: number;
+  managerAccountName?: string | null;
+  managementGrantId?: number;
+  permissionSet?: 'operator_v1';
+  credentialType?: 'management';
+}
+
+export interface AccountBrandAllowance {
+  used: number;
+  limit: number;
+  remaining: number | null;
+  unlimited: boolean;
+  canCreate: boolean;
+}
+
+export interface AccountResourceUsage {
+  used: number;
+  allowance: number | null;
+  remaining: number | null;
+  overageRate: number;
+  mode: 'budget' | 'monthly' | 'unlimited';
+  budget: number | null;
+  budgetUsed: number;
+}
+
+export interface AccountBilling {
+  accessPolicy: 'free_allowed' | 'paid_required' | null;
+  brands: AccountBrandAllowance;
+  funding: Record<string, unknown>;
+  providerRoute: Record<string, unknown>;
+  planName?: string | null;
+  plan?: Record<string, unknown> | null;
+  spendCapMonthlyCents?: number | null;
+  comped?: boolean;
+  overage?: Record<string, unknown>;
+  resources?: {
+    email: AccountResourceUsage;
+    sms: AccountResourceUsage;
+    ai: AccountResourceUsage;
+  };
+  entitlements?: Record<string, unknown>;
+  lifetime?: {
+    emailSent: number;
+    smsSent: number;
+    aiUsed: number;
+  };
+}
+
+export interface AccountTeamSummary {
+  seatLimit: number;
+  seatCount: number;
+  memberCount: number;
+  inviteCount: number;
+  currentRole: 'member' | 'admin' | 'owner' | null;
+  canManageTeam: boolean;
+}
+
 export interface Account {
   id: number;
   name: string | null;
-  website: string | null;
-  bio: string | null;
   avatar: string | null;
   banner: string | null;
-  comped: boolean;
-  accountTier: string;
-  spendCapMonthlyCents: number | null;
-  emailBudgetUsed: number;
-  emailBudgetLimit: number;
-  smsBudgetUsed: number;
-  smsBudgetLimit: number;
-  aiActionsUsed: number;
-  aiActionsLimit: number;
+  commercialTier: CommercialTier;
+  safeModeEnabled: boolean;
+  access: AccountAccess | null;
+  billing?: AccountBilling;
+  team?: AccountTeamSummary;
   brands: Brand[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BrandLink {
+  url?: string;
+  icon?: string;
+  title?: string;
+}
+
+export interface BrandByoRouting {
+  mismatch: boolean;
+  provider: string | null;
+  bypassingDomains: string[];
+  message: string | null;
 }
 
 export interface Brand {
@@ -32,11 +101,11 @@ export interface Brand {
   bgColor: string | null;
   fontHeading: string | null;
   fontBody: string | null;
-  styleNotes: string | null;
-  tone: string | null;
+  headingSize: number | null;
+  bodySize: number | null;
+  radius: number | null;
+  spacingDensity: 'compact' | 'normal' | 'spacious' | null;
   companyDescription: string | null;
-  industry: string | null;
-  exampleCopy: string[];
   defaultHeader: Record<string, unknown> | null;
   defaultFooter: Record<string, unknown> | null;
   defaultTheme: Record<string, unknown> | null;
@@ -44,25 +113,35 @@ export interface Brand {
   companyName: string | null;
   sourceUrl: string | null;
   lastScrapedAt: string | null;
-  links: Record<string, unknown>[];
+  links: BrandLink[] | null;
   logo: string | null;
   complete: boolean;
   emailFromName: string | null;
   emailFromEmail: string | null;
   emailReplyTo: string | null;
+  emailViewOnline: boolean;
+  fromEmailDomainStatus: 'blank' | 'verified' | 'unverified';
   effectiveFromEmail: string | null;
   effectiveReplyTo: string | null;
   effectiveSendingDomain: string | null;
   effectiveSourceEmail: string | null;
   senderConfigured: boolean;
   testEmailRecipients: string[];
+  brandDocument: string | null;
   onboardingState: Record<string, unknown>;
-  onboarding: { steps: Record<string, unknown>; progress: number };
+  onboarding: {
+    steps: Record<string, unknown>;
+    progress: { completed: number; total: number };
+  };
   domainVerified: boolean;
   canSend: boolean;
+  byoRouting: BrandByoRouting;
   brandSubdomain: BrandSubdomain | null;
   subscribedContactsCount: number;
+  logoUrl: string | null;
+  screenshotUrl: string | null;
   capabilities: Record<string, unknown>;
+  smsProvisioned: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -434,30 +513,33 @@ export interface ImageAsset {
 
 export interface UpdateAccount {
   name?: string;
-  bio?: string;
-  website?: string;
   avatar?: string;
   banner?: string;
+  safeModeEnabled?: boolean;
 }
 
 export interface CreateBrand {
+  name?: string;
   companyName?: string;
   brandColor?: string;
   textColor?: string;
   bgColor?: string;
   fontHeading?: string;
   fontBody?: string;
-  styleNotes?: string;
-  tone?: string;
+  headingSize?: number;
+  bodySize?: number;
+  radius?: number;
+  spacingDensity?: 'compact' | 'normal' | 'spacious';
   companyDescription?: string;
-  industry?: string;
   physicalAddress?: string;
+  logo?: string;
+  brandDocument?: string;
   emailFromName?: string;
   emailFromEmail?: string;
   emailReplyTo?: string;
+  emailViewOnline?: boolean;
   testEmailRecipients?: string[];
-  exampleCopy?: string[];
-  links?: Record<string, unknown>[];
+  links?: BrandLink[];
   defaultHeader?: Record<string, unknown>;
   defaultFooter?: Record<string, unknown>;
   defaultTheme?: Record<string, unknown>;
@@ -525,29 +607,9 @@ export interface PreviewParams {
   document: Record<string, unknown>;
 }
 
-export interface UpdateBrand {
-  brandColor?: string;
-  textColor?: string;
-  bgColor?: string;
-  fontHeading?: string;
-  fontBody?: string;
-  styleNotes?: string;
-  tone?: string;
-  companyDescription?: string;
-  industry?: string;
-  physicalAddress?: string;
-  companyName?: string;
-  emailFromName?: string;
-  emailFromEmail?: string;
-  emailReplyTo?: string;
+export interface UpdateBrand extends CreateBrand {
   senderIdentityId?: number;
   senderLocalPart?: string;
-  testEmailRecipients?: string[];
-  exampleCopy?: string[];
-  links?: Record<string, unknown>[];
-  defaultHeader?: Record<string, unknown>;
-  defaultFooter?: Record<string, unknown>;
-  defaultTheme?: Record<string, unknown>;
 }
 
 export interface CreateDomain {

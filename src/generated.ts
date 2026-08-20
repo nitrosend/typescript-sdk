@@ -3720,12 +3720,10 @@ export interface components {
             spacing_density?: "compact" | "normal" | "spacious" | null;
             font_heading?: string | null;
             font_body?: string | null;
+            heading_size?: number | null;
+            body_size?: number | null;
             brand_document?: string | null;
-            style_notes?: string | null;
-            tone?: string | null;
             company_description?: string | null;
-            industry?: string | null;
-            example_copy?: string[] | null;
             default_header?: Record<string, never> | null;
             default_footer?: Record<string, never> | null;
             default_theme?: Record<string, never> | null;
@@ -3746,6 +3744,19 @@ export interface components {
             email_from_name?: string | null;
             email_from_email?: string | null;
             email_reply_to?: string | null;
+            /**
+             * @description Authorization state of the configured visible From address.
+             * @enum {string}
+             */
+            from_email_domain_status?: "blank" | "verified" | "unverified";
+            /** Format: email */
+            readonly effective_from_email?: string | null;
+            /** Format: email */
+            readonly effective_reply_to?: string | null;
+            readonly effective_sending_domain?: string | null;
+            /** Format: email */
+            readonly effective_source_email?: string | null;
+            readonly sender_configured?: boolean;
             /** @description Default-off brand setting that injects a campaign view-in-browser link when a verified tracking domain is available. */
             email_view_online?: boolean;
             test_email_recipients?: string[];
@@ -3764,20 +3775,25 @@ export interface components {
             domain_verified?: boolean;
             can_send?: boolean;
             brand_subdomain?: components["schemas"]["BrandSubdomain"] | null;
-            /** @description Warns when the brand has connected its own (BYO) email provider but verified sending domains still route through nitrosend's shared managed pool. Read-only; never blocks a send. `mismatch` is false (and `message` null) when all is well. */
+            /** @description Warns when the brand has connected its own (BYO) email provider but verified sending domains still route through Nitrosend's hosted provider. Read-only; never blocks a send. `mismatch` is false (and `message` null) when all is well. */
             byo_routing?: {
                 mismatch?: boolean;
                 /** @description The connected BYO provider, e.g. ses. */
                 provider?: string | null;
-                /** @description Verified domains still sending through the shared managed pool. */
+                /** @description Verified domains still sending through Nitrosend's hosted provider. */
                 bypassing_domains?: string[];
                 message?: string | null;
             };
             /** @description Count of subscribed contacts in this brand. */
             subscribed_contacts_count?: number;
+            /** Format: uri */
+            readonly logo_url?: string | null;
+            /** Format: uri */
+            readonly screenshot_url?: string | null;
             capabilities?: {
                 [key: string]: unknown;
             };
+            readonly sms_provisioned?: boolean;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
