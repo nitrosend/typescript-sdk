@@ -50,17 +50,54 @@ export interface Brand {
   emailFromName: string | null;
   emailFromEmail: string | null;
   emailReplyTo: string | null;
+  effectiveFromEmail: string | null;
+  effectiveReplyTo: string | null;
+  effectiveSendingDomain: string | null;
+  effectiveSourceEmail: string | null;
+  senderConfigured: boolean;
   testEmailRecipients: string[];
   onboardingState: Record<string, unknown>;
   onboarding: { steps: Record<string, unknown>; progress: number };
   domainVerified: boolean;
   canSend: boolean;
+  brandSubdomain: BrandSubdomain | null;
   subscribedContactsCount: number;
-  usingSandbox: boolean;
-  sandboxEmail: string | null;
   capabilities: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BrandSubdomain {
+  namespaceStatus: 'active' | 'replacement_pending' | 'retiring' | 'retired';
+  status:
+    | 'not_prepared'
+    | 'allocated'
+    | 'provisioning_dns'
+    | 'provisioning_provider'
+    | 'pending_verification'
+    | 'ready'
+    | 'retiring'
+    | 'retired'
+    | 'failed_retryable'
+    | 'failed_terminal';
+  ready: boolean;
+  selected?: boolean;
+  preparationRequired: boolean;
+  fromEmail?: string;
+  fqdn: string;
+  apex: string;
+  localPart: string;
+  localPartEditable: boolean;
+  fqdnChangeable: false;
+  provisioningRequestedAt?: string;
+  readyAt?: string;
+  nextRetryAt?: string;
+  failureCode?: string;
+}
+
+export interface BrandSubdomainPreparationResponse {
+  status: 'provisioning' | 'ready';
+  brandSubdomain: BrandSubdomain;
 }
 
 export interface Contact {
@@ -503,6 +540,8 @@ export interface UpdateBrand {
   emailFromName?: string;
   emailFromEmail?: string;
   emailReplyTo?: string;
+  senderIdentityId?: number;
+  senderLocalPart?: string;
   testEmailRecipients?: string[];
   exampleCopy?: string[];
   links?: Record<string, unknown>[];
