@@ -2665,7 +2665,7 @@ export interface paths {
         put?: never;
         /**
          * Prepare the reserved Nitrosend sender
-         * @description Idempotently creates the launch-apex endpoint and queues asynchronous DNS, DKIM, SES identity, and tenant preparation. It never sends or retains email. Brand creation itself reserves only the permanent slug.
+         * @description Idempotently materializes the brand-owned logical Domain and sending identity under the verified shared nitrosend.net root. The operation is database-only: it makes no DNS, Vercel, Cloudflare, or SES call and never sends or retains email. Brand creation itself reserves only the slug.
          */
         post: operations["prepareBrandSending"];
         delete?: never;
@@ -3807,9 +3807,9 @@ export interface components {
         };
         BrandSubdomain: {
             /** @enum {string} */
-            namespace_status: "active" | "replacement_pending" | "retiring" | "retired";
+            namespace_status: "unreserved" | "active" | "replacement_pending" | "retiring" | "retired";
             /** @enum {string} */
-            status: "not_prepared" | "allocated" | "provisioning_dns" | "provisioning_provider" | "pending_verification" | "ready" | "retiring" | "retired" | "failed_retryable" | "failed_terminal";
+            status: "brand_identity_required" | "brand_identity_review_required" | "namespace_reservation_required" | "not_materialized" | "root_unavailable" | "ready" | "unavailable";
             ready: boolean;
             selected?: boolean;
             preparation_required: boolean;
@@ -3821,17 +3821,10 @@ export interface components {
             local_part_editable?: boolean;
             /** @constant */
             fqdn_changeable?: false;
-            /** Format: date-time */
-            provisioning_requested_at?: string;
-            /** Format: date-time */
-            ready_at?: string;
-            /** Format: date-time */
-            next_retry_at?: string;
-            failure_code?: string;
         };
         BrandSubdomainPreparationResponse: {
             /** @enum {string} */
-            status: "provisioning" | "ready";
+            status: "ready" | "unavailable";
             brand_subdomain: components["schemas"]["BrandSubdomain"];
         };
         BrandDeletionSafetyImpact: {
@@ -11302,7 +11295,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The brand-subdomain sender is already ready */
+            /** @description The brand-subdomain sender is ready */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11311,17 +11304,17 @@ export interface operations {
                     "application/json": components["schemas"]["BrandSubdomainPreparationResponse"];
                 };
             };
-            /** @description Sender preparation was accepted and is asynchronous */
-            202: {
+            /** @description The account or Brand Kit is not eligible for materialization */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrandSubdomainPreparationResponse"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description The account, brand, rate, or infrastructure state is not eligible for preparation */
-            422: {
+            /** @description The shared hosted-sender root is not release-ready; no identity or delivery state was written */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11651,7 +11644,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Idempotency conflict or sender preparation deferral; no new message is retained in either case */
+            /** @description Idempotency conflict or explicit sender selection required; no new message is retained in either case */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -11667,19 +11660,45 @@ export interface operations {
                         error_code?: "idempotency_conflict";
                     } | {
                         /** @enum {string} */
-                        code: "sender_identity_provisioning" | "sender_identity_selection_required";
+                        code: "sender_identity_selection_required";
                         message: string;
                         /** @constant */
                         error: true;
                         /** @enum {string} */
-                        error_code: "sender_identity_provisioning" | "sender_identity_selection_required";
+                        error_code: "sender_identity_selection_required";
                         retryable: boolean;
                         brand_subdomain: components["schemas"]["BrandSubdomain"];
                     };
                 };
             };
             422: components["responses"]["ValidationError"];
-            503: components["responses"]["AdmissionDeferred"];
+            /** @description Admission evidence or the shared hosted-sender root is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": (components["schemas"]["Error"] & {
+                        /** @enum {string} */
+                        error_code: "delivery_evidence_pending";
+                        /** @constant */
+                        retryable: true;
+                        /** Format: date-time */
+                        retry_at: string;
+                    }) | {
+                        /** @enum {string} */
+                        code: "hosted_sender_root_unavailable";
+                        message: string;
+                        /** @constant */
+                        error: true;
+                        /** @enum {string} */
+                        error_code: "hosted_sender_root_unavailable";
+                        /** @constant */
+                        retryable: true;
+                        brand_subdomain: components["schemas"]["BrandSubdomain"];
+                    };
+                };
+            };
         };
     };
     getMessage: {

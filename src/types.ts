@@ -147,31 +147,24 @@ export interface Brand {
 }
 
 export interface BrandSubdomain {
-  namespaceStatus: 'active' | 'replacement_pending' | 'retiring' | 'retired';
+  namespaceStatus: 'unreserved' | 'active' | 'replacement_pending' | 'retiring' | 'retired';
   status:
-    | 'not_prepared'
-    | 'allocated'
-    | 'provisioning_dns'
-    | 'provisioning_provider'
-    | 'pending_verification'
+    | 'brand_identity_required'
+    | 'brand_identity_review_required'
+    | 'namespace_reservation_required'
+    | 'not_materialized'
+    | 'root_unavailable'
     | 'ready'
-    | 'retiring'
-    | 'retired'
-    | 'failed_retryable'
-    | 'failed_terminal';
+    | 'unavailable';
   ready: boolean;
   selected?: boolean;
   preparationRequired: boolean;
   fromEmail?: string;
-  fqdn: string;
-  apex: string;
-  localPart: string;
-  localPartEditable: boolean;
+  fqdn?: string;
+  apex?: string;
+  localPart?: string;
+  localPartEditable?: boolean;
   fqdnChangeable: false;
-  provisioningRequestedAt?: string;
-  readyAt?: string;
-  nextRetryAt?: string;
-  failureCode?: string;
 }
 
 export interface BrandSubdomainPreparationResponse {
