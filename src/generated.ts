@@ -12,10 +12,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Discover the MCP server
-         * @description Returns MCP discovery metadata for clients that connect over HTTP.
+         * Probe the MCP OAuth endpoint
+         * @description Unauthenticated probes receive the RFC 9728 protected-resource metadata
+         *     URL in `WWW-Authenticate` so OAuth clients can continue discovery.
+         *     Authenticated requests receive `405 Method Not Allowed` because this
+         *     server does not offer a server-initiated event stream over GET. Use
+         *     `POST /mcp` for MCP Streamable HTTP requests.
          */
-        get: operations["discoverMcp"];
+        get: operations["probeMcp"];
         put?: never;
         /**
          * MCP JSON-RPC endpoint
@@ -5823,7 +5827,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    discoverMcp: {
+    probeMcp: {
         parameters: {
             query?: never;
             header?: never;
@@ -5832,8 +5836,21 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description MCP discovery metadata */
-            200: {
+            /** @description MCP authentication required */
+            401: {
+                headers: {
+                    /** @description Bearer challenge with the RFC 9728 protected-resource metadata URL */
+                    "WWW-Authenticate"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Authenticated GET is not supported by the MCP transport */
+            405: {
                 headers: {
                     [name: string]: unknown;
                 };
