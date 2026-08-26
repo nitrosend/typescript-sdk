@@ -826,6 +826,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/my/billing/funding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the current prepaid funding projection and available instruments */
+        get: operations["getFundingStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/billing/funding/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start an add-funds purchase with an optional hosted instrument
+         * @description Creates or replays one local funding purchase. Current public
+         *     instruments return a provider-hosted approval URL. No request-side
+         *     credential field is exposed by this endpoint.
+         */
+        post: operations["createFundingPurchase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/billing/funding/purchases/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read an account-scoped funding purchase */
+        get: operations["getFundingPurchase"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/my/subscription/coupon_preview": {
         parameters: {
             query?: never;
@@ -3645,6 +3701,108 @@ export interface components {
             stripe_token?: string | null;
             /** @description Customer-entered Stripe promotion code or coupon ID. */
             coupon_code?: string | null;
+        };
+        FundingPurchaseCreateRequest: {
+            /** @description Integer service value in minor currency units. */
+            amount_cents: number;
+            currency?: string;
+            /**
+             * @description Optional hosted funding instrument. Omit to use the account default.
+             * @enum {string}
+             */
+            instrument?: "stripe_checkout" | "shopify_one_time";
+            /** @description Optional opaque continuation bound to this funding purchase. */
+            paid_action_intent_id?: string | null;
+        };
+        FundingInstrument: {
+            /** @enum {string} */
+            instrument: "stripe_checkout" | "shopify_one_time";
+            /** @enum {string} */
+            provider: "stripe" | "shopify";
+            /** @enum {string} */
+            mode: "hosted_approval";
+            available: boolean;
+            reason?: string | null;
+        };
+        FundingUrlApproval: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "FundingUrlApproval";
+            /** @enum {string} */
+            provider: "stripe" | "shopify";
+            /** Format: uri */
+            url: string;
+            /** @enum {string} */
+            target: "self" | "top";
+        };
+        FundingChallengeApproval: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "FundingChallengeApproval";
+            instrument: string;
+            protocol: string;
+            challenge: string;
+            /** Format: date-time */
+            expires_at?: string | null;
+        };
+        FundingApproval: components["schemas"]["FundingUrlApproval"] | components["schemas"]["FundingChallengeApproval"];
+        FundingPurchase: {
+            id: number;
+            paid_action_intent_id?: string | null;
+            /** @enum {string} */
+            provider: "stripe" | "shopify";
+            /** @enum {string} */
+            instrument: "stripe_checkout" | "shopify_one_time" | "stripe_off_session";
+            /** @enum {string} */
+            status: "requested" | "pending" | "checkout_created" | "credited" | "failed" | "expired" | "partially_reversed" | "reversed";
+            currency: string;
+            requested_cents: number;
+            requested_display?: string;
+            /** Format: uri */
+            checkout_url?: string | null;
+            approval?: Omit<components["schemas"]["FundingApproval"], "kind"> | null;
+            /** Format: date-time */
+            expires_at?: string | null;
+            credited_cents: number;
+            reversed_cents: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        FundingPurchaseCapability: {
+            available: boolean;
+            state: string;
+            reason?: string | null;
+            /** @enum {string|null} */
+            default_instrument?: "stripe_checkout" | "shopify_one_time" | null;
+            instruments: components["schemas"]["FundingInstrument"][];
+            currency: string;
+            minimum_cents?: number | null;
+            maximum_cents?: number | null;
+            preset_cents: number[];
+        };
+        FundingStatus: {
+            state: string;
+            /** @enum {string} */
+            applies_to: "prepaid_features";
+            subscription_gate: boolean;
+            currency: string;
+            available_cents: number;
+            reserved_cents: number;
+            deficit_cents: number;
+            purchase: components["schemas"]["FundingPurchaseCapability"];
+            pending_purchase?: components["schemas"]["FundingPurchase"] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        FundingPurchaseResponse: {
+            purchase: components["schemas"]["FundingPurchase"];
+            funding: components["schemas"]["FundingStatus"];
         };
         SubscriptionChangeRequest: {
             plan_id: number;
@@ -7285,6 +7443,111 @@ export interface operations {
             };
             /** @description Shopify billing could not be reached */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getFundingStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current prepaid funding status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundingStatus"];
+                };
+            };
+        };
+    };
+    createFundingPurchase: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FundingPurchaseCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Existing idempotent funding purchase */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundingPurchaseResponse"];
+                };
+            };
+            /** @description Funding purchase created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundingPurchaseResponse"];
+                };
+            };
+            /** @description Idempotency key was used for different funding input */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Amount or selected funding instrument is unavailable */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getFundingPurchase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Local purchase ID or opaque Stripe Checkout Session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Funding purchase status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundingPurchaseResponse"];
+                };
+            };
+            /** @description Funding purchase not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
