@@ -3725,11 +3725,8 @@ export interface components {
             reason?: string | null;
         };
         FundingUrlApproval: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "FundingUrlApproval";
+            /** @enum {string} */
+            kind: "url";
             /** @enum {string} */
             provider: "stripe" | "shopify";
             /** Format: uri */
@@ -3738,11 +3735,8 @@ export interface components {
             target: "self" | "top";
         };
         FundingChallengeApproval: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "FundingChallengeApproval";
+            /** @enum {string} */
+            kind: "challenge";
             instrument: string;
             protocol: string;
             challenge: string;
@@ -3764,7 +3758,7 @@ export interface components {
             requested_display?: string;
             /** Format: uri */
             checkout_url?: string | null;
-            approval?: Omit<components["schemas"]["FundingApproval"], "kind"> | null;
+            approval?: components["schemas"]["FundingApproval"] | null;
             /** Format: date-time */
             expires_at?: string | null;
             credited_cents: number;
