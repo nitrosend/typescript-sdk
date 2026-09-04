@@ -2012,10 +2012,15 @@ export interface paths {
          *     delivery control (`status`, `approval_state`) are separate requests and
          *     must not be mixed. For graph writes, pass `expected_draft_revision_id`
          *     from the latest flow read to reject stale authored changes. Flow
-         *     approval/rejection and `status: live` publication require `revision_id`
-         *     for the exact current draft. `status: live` without `revision_id`
-         *     resumes a paused flow's existing active revision and never publishes
-         *     pending changes.
+         *     approval/rejection and `status: live` publication from a draft flow
+         *     derive the current draft when `revision_id` is omitted. When supplied,
+         *     `revision_id` asserts that the named revision is still the current
+         *     draft; a stale assertion returns 409. On an already-live flow,
+         *     `status: live` without `revision_id` is a status no-op and does not
+         *     publish pending changes. On a paused flow, it resumes the existing
+         *     active revision without publishing pending changes. For either live or
+         *     paused flows, supplying the current draft revision requests publication
+         *     of that draft.
          */
         patch: operations["updateFlow"];
         trace?: never;
@@ -10050,7 +10055,7 @@ export interface operations {
                     status?: "draft" | "live" | "paused" | "archived" | "cancelled";
                     /** @enum {string} */
                     approval_state?: "approved" | "rejected";
-                    /** @description Required with flow approval_state control and with status=live publication. Omit to resume the current active revision. */
+                    /** @description Optional current-draft assertion for approval_state and status=live publication. Omission derives the current draft for approval_state and for publication from draft status. On an already-live flow, status=live without revision_id is a no-op; on a paused flow, it resumes the active revision. Supply the current draft revision to publish pending changes from either state. */
                     revision_id?: number | null;
                     /** @description Exact optimistic concurrency token for authored graph changes. */
                     expected_draft_revision_id?: number | null;
