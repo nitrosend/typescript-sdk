@@ -12,10 +12,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Discover the MCP server
-         * @description Returns MCP discovery metadata for clients that connect over HTTP.
+         * Probe the MCP OAuth endpoint
+         * @description Unauthenticated probes receive the RFC 9728 protected-resource metadata
+         *     URL in `WWW-Authenticate` so OAuth clients can continue discovery.
+         *     Authenticated requests receive `405 Method Not Allowed` because this
+         *     server does not offer a server-initiated event stream over GET. Use
+         *     `POST /mcp` for MCP Streamable HTTP requests.
          */
-        get: operations["discoverMcp"];
+        get: operations["probeMcp"];
         put?: never;
         /**
          * MCP JSON-RPC endpoint
@@ -811,11 +815,91 @@ export interface paths {
         put?: never;
         /**
          * Start a subscription checkout
-         * @description Starts checkout through the account's authoritative billing provider.
+         * @description Creates or replays one account-scoped plan purchase through the
+         *     authoritative billing provider. A Stripe-backed active subscription is
+         *     changed in place rather than creating a parallel subscription.
          *     Shopify-managed accounts receive a Shopify-hosted approval URL and
          *     never receive a Stripe checkout URL.
          */
         post: operations["checkoutSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/subscription/checkout_status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reconcile and read a plan purchase
+         * @description Reads the requested plan while approval is pending. Stripe and Shopify
+         *     are read back before the local state is returned. Omit purchase_id to
+         *     inspect the latest pending checkout or the current subscription.
+         */
+        get: operations["getSubscriptionCheckoutStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/billing/funding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the current prepaid funding projection and available instruments */
+        get: operations["getFundingStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/billing/funding/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start an add-funds purchase with an optional hosted instrument
+         * @description Creates or replays one local funding purchase. Current public
+         *     instruments return a provider-hosted approval URL. No request-side
+         *     credential field is exposed by this endpoint.
+         */
+        post: operations["createFundingPurchase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/billing/funding/purchases/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read an account-scoped funding purchase */
+        get: operations["getFundingPurchase"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1952,10 +2036,15 @@ export interface paths {
          *     delivery control (`status`, `approval_state`) are separate requests and
          *     must not be mixed. For graph writes, pass `expected_draft_revision_id`
          *     from the latest flow read to reject stale authored changes. Flow
-         *     approval/rejection and `status: live` publication require `revision_id`
-         *     for the exact current draft. `status: live` without `revision_id`
-         *     resumes a paused flow's existing active revision and never publishes
-         *     pending changes.
+         *     approval/rejection and `status: live` publication from a draft flow
+         *     derive the current draft when `revision_id` is omitted. When supplied,
+         *     `revision_id` asserts that the named revision is still the current
+         *     draft; a stale assertion returns 409. On an already-live flow,
+         *     `status: live` without `revision_id` is a status no-op and does not
+         *     publish pending changes. On a paused flow, it resumes the existing
+         *     active revision without publishing pending changes. For either live or
+         *     paused flows, supplying the current draft revision requests publication
+         *     of that draft.
          */
         patch: operations["updateFlow"];
         trace?: never;
@@ -2173,11 +2262,63 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create an Entri bootstrap session for a pending domain
+         * Create an Entri bootstrap session for domain DNS setup
          * @description Returns a short-lived Entri JWT plus the DNS record payload needed to
-         *     launch the Entri modal for a pending domain owned by the current brand.
+         *     launch the Entri modal for a domain owned by the current brand. An
+         *     already-verified apex may request the prepared company-inbox MX cutover
+         *     only with explicit approval and an exact domain-name confirmation.
          */
         post: operations["createEntriSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/domains/{id}/inbound_setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Configure inbound delivery for a verified domain
+         * @description Selects exactly one inbound method for the current brand's verified
+         *     domain. Provider forwarding keeps Google Workspace or Microsoft 365 as
+         *     the primary receiver and allocates one opaque Nitrosend forwarding
+         *     address. MX mode requires the domain to be ready for Nitrosend receiving;
+         *     apex domains additionally require a verified forward-all route.
+         */
+        put: operations["updateDomainInboundSetup"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/domains/{id}/inbound_setup/probe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify provider forwarding for a domain inbox
+         * @description Sends a challenge to the configured customer-facing inbox address. The
+         *     provider-forwarded copy must return through its bound opaque Nitrosend
+         *     address before the setup becomes active.
+         */
+        post: operations["sendDomainInboundForwardingProbe"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2665,7 +2806,7 @@ export interface paths {
         put?: never;
         /**
          * Prepare the reserved Nitrosend sender
-         * @description Idempotently creates the launch-apex endpoint and queues asynchronous DNS, DKIM, SES identity, and tenant preparation. It never sends or retains email. Brand creation itself reserves only the permanent slug.
+         * @description Idempotently materializes the brand-owned logical Domain and sending identity under the verified shared nitrosend.net root. The operation is database-only: it makes no DNS, Vercel, Cloudflare, or SES call and never sends or retains email. Brand creation itself reserves only the slug.
          */
         post: operations["prepareBrandSending"];
         delete?: never;
@@ -3255,6 +3396,8 @@ export interface components {
             country_code?: string | null;
             time_zone?: string | null;
             admin?: boolean;
+            /** @description Capped three-state dashboard-login counter: 0 = the user has never logged into the app UI, 1 = the user is inside their first UI login, 2 = returning. Advances only on real dashboard logins (never on API key, MCP, or agent-connect authentication). */
+            ui_login_count?: number;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
@@ -3642,6 +3785,102 @@ export interface components {
             /** @description Customer-entered Stripe promotion code or coupon ID. */
             coupon_code?: string | null;
         };
+        FundingPurchaseCreateRequest: {
+            /** @description Integer service value in minor currency units. */
+            amount_cents: number;
+            currency?: string;
+            /**
+             * @description Optional hosted funding instrument. Omit to use the account default.
+             * @enum {string}
+             */
+            instrument?: "stripe_checkout" | "shopify_one_time";
+            /** @description Optional opaque continuation bound to this funding purchase. */
+            paid_action_intent_id?: string | null;
+        };
+        FundingInstrument: {
+            /** @enum {string} */
+            instrument: "stripe_checkout" | "shopify_one_time";
+            /** @enum {string} */
+            provider: "stripe" | "shopify";
+            /** @enum {string} */
+            mode: "hosted_approval";
+            available: boolean;
+            reason?: string | null;
+        };
+        FundingUrlApproval: {
+            /** @enum {string} */
+            kind: "url";
+            /** @enum {string} */
+            provider: "stripe" | "shopify";
+            /** Format: uri */
+            url: string;
+            /** @enum {string} */
+            target: "self" | "top";
+        };
+        FundingChallengeApproval: {
+            /** @enum {string} */
+            kind: "challenge";
+            instrument: string;
+            protocol: string;
+            challenge: string;
+            /** Format: date-time */
+            expires_at?: string | null;
+        };
+        FundingApproval: components["schemas"]["FundingUrlApproval"] | components["schemas"]["FundingChallengeApproval"];
+        FundingPurchase: {
+            id: number;
+            paid_action_intent_id?: string | null;
+            /** @enum {string} */
+            provider: "stripe" | "shopify";
+            /** @enum {string} */
+            instrument: "stripe_checkout" | "shopify_one_time" | "stripe_off_session";
+            /** @enum {string} */
+            status: "requested" | "pending" | "checkout_created" | "credited" | "failed" | "expired" | "partially_reversed" | "reversed";
+            currency: string;
+            requested_cents: number;
+            requested_display?: string;
+            /** Format: uri */
+            checkout_url?: string | null;
+            approval?: components["schemas"]["FundingApproval"] | null;
+            /** Format: date-time */
+            expires_at?: string | null;
+            credited_cents: number;
+            reversed_cents: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        FundingPurchaseCapability: {
+            available: boolean;
+            state: string;
+            reason?: string | null;
+            /** @enum {string|null} */
+            default_instrument?: "stripe_checkout" | "shopify_one_time" | null;
+            instruments: components["schemas"]["FundingInstrument"][];
+            currency: string;
+            minimum_cents?: number | null;
+            maximum_cents?: number | null;
+            preset_cents: number[];
+        };
+        FundingStatus: {
+            state: string;
+            /** @enum {string} */
+            applies_to: "prepaid_features";
+            subscription_gate: boolean;
+            currency: string;
+            available_cents: number;
+            reserved_cents: number;
+            deficit_cents: number;
+            purchase: components["schemas"]["FundingPurchaseCapability"];
+            pending_purchase?: components["schemas"]["FundingPurchase"] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        FundingPurchaseResponse: {
+            purchase: components["schemas"]["FundingPurchase"];
+            funding: components["schemas"]["FundingStatus"];
+        };
         SubscriptionChangeRequest: {
             plan_id: number;
             /** @description Customer-entered Stripe promotion code or coupon ID. */
@@ -3807,9 +4046,9 @@ export interface components {
         };
         BrandSubdomain: {
             /** @enum {string} */
-            namespace_status: "active" | "replacement_pending" | "retiring" | "retired";
+            namespace_status: "unreserved" | "active" | "replacement_pending" | "retiring" | "retired";
             /** @enum {string} */
-            status: "not_prepared" | "allocated" | "provisioning_dns" | "provisioning_provider" | "pending_verification" | "ready" | "retiring" | "retired" | "failed_retryable" | "failed_terminal";
+            status: "brand_identity_required" | "brand_identity_review_required" | "namespace_reservation_required" | "not_materialized" | "root_unavailable" | "ready" | "unavailable";
             ready: boolean;
             selected?: boolean;
             preparation_required: boolean;
@@ -3821,17 +4060,10 @@ export interface components {
             local_part_editable?: boolean;
             /** @constant */
             fqdn_changeable?: false;
-            /** Format: date-time */
-            provisioning_requested_at?: string;
-            /** Format: date-time */
-            ready_at?: string;
-            /** Format: date-time */
-            next_retry_at?: string;
-            failure_code?: string;
         };
         BrandSubdomainPreparationResponse: {
             /** @enum {string} */
-            status: "provisioning" | "ready";
+            status: "ready" | "unavailable";
             brand_subdomain: components["schemas"]["BrandSubdomain"];
         };
         BrandDeletionSafetyImpact: {
@@ -5308,13 +5540,8 @@ export interface components {
              * @enum {string|null}
              */
             dmarc_observed_policy?: "none" | "quarantine" | "reject" | null;
-            dns_records?: {
-                record_type?: string;
-                name?: string;
-                value?: string;
-                priority?: string | null;
-                valid?: string;
-            }[] | null;
+            dns_records?: components["schemas"]["DomainDnsRecords"];
+            inbound_setup?: components["schemas"]["DomainInboundSetup"] | null;
             dns_health?: {
                 [key: string]: unknown;
             } | null;
@@ -5326,19 +5553,128 @@ export interface components {
             created_at?: string;
         };
         EntriSessionResponse: {
-            domain?: {
-                id?: number;
-                name?: string;
+            domain: components["schemas"]["Domain"];
+            entri: {
+                application_id: string;
+                token: string;
+                prefilled_domain: string;
+                user_id: string;
+                dns_records: components["schemas"]["EntriDnsRecord"][];
+                manual_dns_records: components["schemas"]["DomainDnsRecords"];
+            };
+        };
+        EntriSessionRequest: {
+            /**
+             * @description Explicitly include the prepared company-inbox MX cutover in this session.
+             * @default false
+             */
+            apex_mx_override: boolean;
+            /** @description Exact apex domain name being approved. Required when apex_mx_override is true. */
+            apex_mx_confirmation?: string;
+        };
+        EntriSessionValidationError: components["schemas"]["Error"] & {
+            /** @description Machine-readable reasons the apex MX cutover cannot proceed. */
+            blockers?: string[];
+        };
+        DomainDnsRecords: {
+            sending_dns_records?: components["schemas"]["DomainDnsRecord"][];
+            receiving_dns_records?: components["schemas"]["DomainDnsRecord"][];
+        } & {
+            [key: string]: unknown;
+        };
+        DomainDnsRecord: {
+            record_type?: string;
+            name?: string;
+            value?: string;
+            priority?: string | null;
+            valid?: string | null;
+            purpose?: string | null;
+            required?: boolean | null;
+            mail_forwarding?: components["schemas"]["DomainMailForwarding"] | null;
+        };
+        DomainMailForwarding: {
+            enabled: boolean;
+            /** @enum {string} */
+            route_type: "legacy_forward_all" | "unmatched_forward";
+            /** @enum {string} */
+            destination_type: "legacy_mx" | "smtp_relay";
+            legacy_mx_records: components["schemas"]["MxRecord"][];
+            setup_note: string;
+        };
+        DomainInboundSetupRequest: {
+            inbound_setup: {
                 /** @enum {string} */
-                status?: "pending" | "verified";
+                method: "provider_forwarding" | "mx";
+                /**
+                 * @description Required when method is provider_forwarding.
+                 * @enum {string}
+                 */
+                provider?: "google_workspace" | "microsoft_365";
+                /** @description Required when the domain does not yet have its included inbox. */
+                local_part?: string;
+                display_name?: string | null;
+                /**
+                 * @description Prepare apex receiving before opening the existing Entri MX connection. Does not change DNS.
+                 * @default false
+                 */
+                prepare: boolean;
+                /**
+                 * @description Explicit first-mailbox choice. Rejected when public MX or a saved route identifies an existing mail service.
+                 * @default false
+                 */
+                no_existing_mail_service: boolean;
             };
-            entri?: {
-                application_id?: string;
-                token?: string;
-                prefilled_domain?: string;
-                user_id?: string;
-                dns_records?: components["schemas"]["EntriDnsRecord"][];
+        };
+        DomainInboundSetup: {
+            /** @enum {string} */
+            method: "none" | "provider_forwarding" | "mx";
+            /** @enum {string} */
+            status: "not_configured" | "pending" | "active" | "attention";
+            /** @enum {string|null} */
+            mx_scope?: "apex" | "subdomain" | null;
+            inbox?: components["schemas"]["DomainInboundInbox"] | null;
+            provider_forwarding?: components["schemas"]["DomainProviderForwarding"] | null;
+            apex_mx?: components["schemas"]["DomainApexMxSetup"] | null;
+        };
+        DomainInboundInbox: {
+            id: number;
+            /** Format: email */
+            address: string;
+            display_name?: string | null;
+            /** @enum {string} */
+            status: "active" | "disabled" | "archived";
+        };
+        DomainProviderForwarding: {
+            /** @enum {string} */
+            provider: "google_workspace" | "microsoft_365";
+            /** Format: email */
+            readonly forwarding_address: string;
+            /** Format: date-time */
+            probe_sent_at?: string | null;
+            /** Format: date-time */
+            verified_at?: string | null;
+        };
+        DomainApexMxSetup: {
+            /** @enum {string} */
+            mode?: "standalone" | "forward_all";
+            preparation?: {
+                /** @enum {string} */
+                state?: "queued" | "preparing" | "probing" | "ready" | "failed";
+                message?: string;
+                failure_code?: string;
             };
+            prepared: boolean;
+            configured: boolean;
+            approval_required: boolean;
+            /** Format: date-time */
+            approval_expires_at?: string | null;
+            legacy_provider_label?: string | null;
+            legacy_mx_records: components["schemas"]["MxRecord"][];
+            setup_note?: string | null;
+        };
+        MxRecord: {
+            host: string;
+            preference: number;
         };
         EntriDnsRecord: {
             type?: string;
@@ -5830,7 +6166,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    discoverMcp: {
+    probeMcp: {
         parameters: {
             query?: never;
             header?: never;
@@ -5839,8 +6175,21 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description MCP discovery metadata */
-            200: {
+            /** @description MCP authentication required */
+            401: {
+                headers: {
+                    /** @description Bearer challenge with the RFC 9728 protected-resource metadata URL */
+                    "WWW-Authenticate"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Authenticated GET is not supported by the MCP transport */
+            405: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7221,7 +7570,10 @@ export interface operations {
     checkoutSubscription: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional stable retry key. The server also reuses an open same-plan checkout. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -7229,6 +7581,8 @@ export interface operations {
             content: {
                 "application/json": {
                     plan_id: number;
+                    /** @description Optional body form of Idempotency-Key for compatibility. */
+                    idempotency_key?: string;
                 };
             };
         };
@@ -7264,6 +7618,24 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            /** @description Requested plan is not available */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Another checkout is pending or the idempotency key conflicts */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Shopify rejected the requested billing terms */
             422: {
                 headers: {
@@ -7273,8 +7645,176 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Shopify billing could not be reached */
+            /** @description The billing provider could not be reached */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getSubscriptionCheckoutStatus: {
+        parameters: {
+            query?: {
+                purchase_id?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reconciled plan purchase status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        purchase_id?: number | null;
+                        subscription_id?: number | null;
+                        has_subscription: boolean;
+                        status?: string | null;
+                        activated: boolean;
+                        plan_name?: string | null;
+                        provider_status?: string | null;
+                        /** Format: uri */
+                        checkout_url?: string | null;
+                        approval?: {
+                            [key: string]: unknown;
+                        } | null;
+                        billing_provider: string;
+                        billing_route: {
+                            [key: string]: unknown;
+                        };
+                        /** Format: uri */
+                        manage_url?: string | null;
+                        entitlements?: {
+                            [key: string]: unknown;
+                        } | null;
+                        next_action?: string;
+                    };
+                };
+            };
+            /** @description Requested plan purchase was not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Provider state could not be verified */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getFundingStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current prepaid funding status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundingStatus"];
+                };
+            };
+        };
+    };
+    createFundingPurchase: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FundingPurchaseCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Existing idempotent funding purchase */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundingPurchaseResponse"];
+                };
+            };
+            /** @description Funding purchase created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundingPurchaseResponse"];
+                };
+            };
+            /** @description Idempotency key was used for different funding input */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Amount or selected funding instrument is unavailable */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getFundingPurchase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Local purchase ID or opaque Stripe Checkout Session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Funding purchase status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundingPurchaseResponse"];
+                };
+            };
+            /** @description Funding purchase not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9783,7 +10323,7 @@ export interface operations {
                     status?: "draft" | "live" | "paused" | "archived" | "cancelled";
                     /** @enum {string} */
                     approval_state?: "approved" | "rejected";
-                    /** @description Required with flow approval_state control and with status=live publication. Omit to resume the current active revision. */
+                    /** @description Optional current-draft assertion for approval_state and status=live publication. Omission derives the current draft for approval_state and for publication from draft status. On an already-live flow, status=live without revision_id is a no-op; on a paused flow, it resumes the active revision. Supply the current draft revision to publish pending changes from either state. */
                     revision_id?: number | null;
                     /** @description Exact optimistic concurrency token for authored graph changes. */
                     expected_draft_revision_id?: number | null;
@@ -10206,7 +10746,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EntriSessionRequest"];
+            };
+        };
         responses: {
             /** @description Entri bootstrap payload */
             200: {
@@ -10218,9 +10762,71 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
-            422: components["responses"]["ValidationError"];
+            /** @description Domain setup or apex mail cutover is not ready */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntriSessionValidationError"];
+                };
+            };
             429: components["responses"]["TooManyRequests"];
             503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    updateDomainInboundSetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DomainInboundSetupRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated domain and inbound setup state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Domain"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    sendDomainInboundForwardingProbe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Domain with refreshed forwarding probe state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Domain"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationError"];
         };
     };
     listIntegrations: {
@@ -11302,7 +11908,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The brand-subdomain sender is already ready */
+            /** @description The brand-subdomain sender is ready */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11311,17 +11917,17 @@ export interface operations {
                     "application/json": components["schemas"]["BrandSubdomainPreparationResponse"];
                 };
             };
-            /** @description Sender preparation was accepted and is asynchronous */
-            202: {
+            /** @description The account or Brand Kit is not eligible for materialization */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrandSubdomainPreparationResponse"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description The account, brand, rate, or infrastructure state is not eligible for preparation */
-            422: {
+            /** @description The shared hosted-sender root is not release-ready; no identity or delivery state was written */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11651,7 +12257,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Idempotency conflict or sender preparation deferral; no new message is retained in either case */
+            /** @description Idempotency conflict or explicit sender selection required; no new message is retained in either case */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -11667,19 +12273,45 @@ export interface operations {
                         error_code?: "idempotency_conflict";
                     } | {
                         /** @enum {string} */
-                        code: "sender_identity_provisioning" | "sender_identity_selection_required";
+                        code: "sender_identity_selection_required";
                         message: string;
                         /** @constant */
                         error: true;
                         /** @enum {string} */
-                        error_code: "sender_identity_provisioning" | "sender_identity_selection_required";
+                        error_code: "sender_identity_selection_required";
                         retryable: boolean;
                         brand_subdomain: components["schemas"]["BrandSubdomain"];
                     };
                 };
             };
             422: components["responses"]["ValidationError"];
-            503: components["responses"]["AdmissionDeferred"];
+            /** @description Admission evidence or the shared hosted-sender root is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": (components["schemas"]["Error"] & {
+                        /** @enum {string} */
+                        error_code: "delivery_evidence_pending";
+                        /** @constant */
+                        retryable: true;
+                        /** Format: date-time */
+                        retry_at: string;
+                    }) | {
+                        /** @enum {string} */
+                        code: "hosted_sender_root_unavailable";
+                        message: string;
+                        /** @constant */
+                        error: true;
+                        /** @enum {string} */
+                        error_code: "hosted_sender_root_unavailable";
+                        /** @constant */
+                        retryable: true;
+                        brand_subdomain: components["schemas"]["BrandSubdomain"];
+                    };
+                };
+            };
         };
     };
     getMessage: {
