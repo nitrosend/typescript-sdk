@@ -5142,8 +5142,25 @@ export interface components {
             id?: number;
             /** @enum {string} */
             role?: "user" | "assistant" | "tool" | "system";
+            /** @description Credential-shaped values are redacted before display. */
             content?: string;
-            tool_calls?: {
+            tool_calls?: ({
+                id?: string;
+                name?: string;
+                input?: {
+                    [key: string]: unknown;
+                };
+                safe?: boolean;
+                /** @enum {string} */
+                status?: "pending" | "approved" | "executing" | "completed" | "rejected" | "error" | "cancelled" | "uncertain";
+                /** @description Binds a proposal to its execution and exact arguments. Commands also require the originating authenticated user. */
+                approval_token?: string;
+                /** @description Recorded tool outcome; queued does not mean sent. */
+                result?: unknown;
+            } & {
+                [key: string]: unknown;
+            })[];
+            actions?: {
                 [key: string]: unknown;
             }[];
             sequence?: number;
