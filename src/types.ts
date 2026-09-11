@@ -419,21 +419,26 @@ export interface Suppression {
   updatedAt: string;
 }
 
+/** How an import stands against the account's standing row limit. */
 export interface ImportGuardrail {
-  tier: 'auto' | 'hold_sends' | 'contact_us';
-  status: 'ok' | 'requires_review' | 'contact_sales';
-  contactUsCeiling: number;
-  sendsHeld: boolean;
+  tier: 'auto' | 'contact_us';
+  status: 'ok' | 'contact_sales';
+  /** The account standing the limit derives from. */
+  standing: string;
+  /** Row ceiling for the standing; null means no row ceiling. */
+  maxRows: number | null;
 }
 
+/** Import limits for the account, derived from its deliverability standing. */
 export interface ImportPolicy {
+  standing: string;
+  maxRows: number | null;
   maxFileSizeBytes: number;
   maxFileSizeMb: number;
-  autoMaxRows: number;
-  contactUsMaxRows: number;
   maxActiveImports: number;
   createRateLimitPerMinute: number;
   directUploadRateLimitPerMinute: number;
+  writeModes: Array<'real' | 'shadow' | 'dry_run'>;
 }
 
 export interface ImportSpec {

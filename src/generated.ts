@@ -1710,6 +1710,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/my/campaigns/{id}/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Read saved campaign readiness and capacity guidance
+         * @description Read-only structural checks and the deduplicated saved audience count. Capacity warnings are informational, not approval or admission gates. Save pending draft changes before requesting this projection.
+         */
+        get: operations["getCampaignReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/my/campaigns/{id}/delivery": {
         parameters: {
             query?: never;
@@ -3370,6 +3392,9 @@ export interface components {
             };
         };
         Error: {
+            capacity_recovery?: components["schemas"]["DeliveryCapacityRecovery"];
+            /** @description Context-specific recovery action, including sending capacity or prepaid funding recovery. */
+            recovery_action?: Record<string, never>;
             code: number;
             message: string;
             /** @constant */
@@ -4205,6 +4230,10 @@ export interface components {
         };
         DeliveryCapacity: {
             /** @enum {string} */
+            source?: "plan" | "operator_override";
+            /** @constant */
+            window_seconds?: 86400;
+            /** @enum {string} */
             status: "known" | "unlimited" | "not_applicable" | "unknown" | "degraded";
             limit: number | null;
             reserved: number | null;
@@ -4225,15 +4254,16 @@ export interface components {
             /** @enum {string} */
             status: "ready" | "deferred";
             policy_version: string;
+            queued_quantity?: number;
             /** Format: date-time */
             next_dispatch_at?: string;
             scopes: components["schemas"]["DeliveryPacingScope"][];
         };
         DeliveryStatusIssue: {
             /** @enum {string} */
-            control: "brand" | "sender_identity" | "commercial_capacity" | "identity_capacity" | "brand_subdomain_capacity";
+            control: "account_status" | "brand" | "sender_identity" | "commercial_capacity" | "identity_capacity" | "brand_subdomain_capacity";
             /** @enum {string} */
-            reason_code: "brand_unavailable" | "sender_not_ready" | "sending_capacity_reached" | "sender_capacity_reached" | "brand_subdomain_capacity_reached" | "delivery_evidence_pending";
+            reason_code: "sending_paused" | "brand_unavailable" | "sender_not_ready" | "sending_capacity_reached" | "sender_capacity_reached" | "brand_subdomain_capacity_reached" | "delivery_evidence_pending";
             retryable: boolean;
             /** Format: date-time */
             retry_at?: string;
@@ -4244,11 +4274,12 @@ export interface components {
             /** @enum {string} */
             admission_status: "allowed" | "deferred" | "denied";
             commercial_capacity: components["schemas"]["DeliveryCapacity"];
+            capacity_recovery?: components["schemas"]["DeliveryCapacityRecovery"];
             identity_capacity: components["schemas"]["DeliveryCapacity"];
             brand_subdomain_capacity: components["schemas"]["DeliveryCapacity"];
             pacing_state: components["schemas"]["DeliveryPacingState"];
             /** @enum {string} */
-            blocking_control?: "brand" | "sender_identity" | "commercial_capacity" | "identity_capacity" | "brand_subdomain_capacity";
+            blocking_control?: "account_status" | "brand" | "sender_identity" | "commercial_capacity" | "identity_capacity" | "brand_subdomain_capacity";
             reason_code?: string;
             issues: components["schemas"]["DeliveryStatusIssue"][];
             /** Format: date-time */
@@ -4256,12 +4287,56 @@ export interface components {
             /** Format: date-time */
             observed_at: string;
         };
+        /** @description Informational recovery at 80 percent used, exhaustion, or when a campaign exceeds remaining allowance. Never denies a send or promises that payment or verification bypasses safety. Actions come from the shared backend projection; only offer verification when new valid proof can improve standing. */
+        DeliveryCapacityRecovery: {
+            /** @enum {string} */
+            state: "approaching" | "reached" | "campaign_exceeds_remaining";
+            /** @enum {string} */
+            reason_code: "sending_capacity_warning" | "sending_capacity_reached" | "sender_capacity_reached" | "brand_subdomain_capacity_reached";
+            /** @enum {string} */
+            blocking_control: "commercial_capacity" | "identity_capacity" | "brand_subdomain_capacity";
+            usage_percent: number;
+            requested_quantity?: number;
+            label: string;
+            detail: string;
+            capacity: components["schemas"]["DeliveryCapacity"];
+            /**
+             * Format: uri
+             * @description Shareable account-specific plan link. Authentication and billing permissions still apply.
+             */
+            upgrade_url?: string;
+            /**
+             * Format: date-time
+             * @description Recorded retry time, not a guarantee that delivery completes then.
+             */
+            retry_at?: string;
+            recovery_action: components["schemas"]["DeliveryCapacityRecoveryAction"];
+            recovery_actions: components["schemas"]["DeliveryCapacityRecoveryAction"][];
+            owner_action: components["schemas"]["DeliveryCapacityRecoveryAction"];
+        };
+        DeliveryCapacityRecoveryAction: {
+            /** @enum {string} */
+            type: "upgrade_plan" | "verify_list" | "contact_owner" | "manage_provider_billing" | "contact_support";
+            label: string;
+            detail?: string;
+            /** Format: uri */
+            url: string;
+            /** @constant */
+            required_role?: "account_owner_or_admin";
+        };
         ValidationAudience: {
             contact_channel_ids?: number[];
             contact_ids?: number[];
             list_id?: number;
             segment_id?: number;
-        } & (unknown | unknown | unknown | unknown);
+            /**
+             * @description All email channels in the current Brand, subject to the 100000-candidate operation bound.
+             * @constant
+             */
+            all_contacts?: true;
+            /** @description Pass the reviewed quote digest when creating an operation. A changed address set, eligibility or price returns 409 validation_quote_changed without holding funds. Omit only when intentionally authorizing the current audience at the current price. */
+            quote_digest?: string;
+        } & (unknown | unknown | unknown | unknown | unknown);
         ValidationOperationCounts: {
             candidate_count: number;
             deduplicated_count: number;
@@ -4302,7 +4377,8 @@ export interface components {
             /** @enum {string} */
             status: "quoted" | "needs_funding";
             /** @enum {string} */
-            source_kind: "contact_channel" | "contact" | "list" | "segment";
+            source_kind: "contact_channel" | "contact" | "list" | "segment" | "all_contacts";
+            quote_digest: string;
             counts: components["schemas"]["ValidationOperationCounts"];
             pricing: components["schemas"]["ValidationOperationPricing"];
             funding: components["schemas"]["ValidationOperationFunding"];
@@ -4315,7 +4391,7 @@ export interface components {
             /** @enum {string} */
             status: "requested" | "quoted" | "held" | "executing" | "partially_committed" | "committed" | "released" | "needs_funding" | "failed";
             /** @enum {string} */
-            source_kind: "contact_channel" | "contact" | "list" | "segment";
+            source_kind: "contact_channel" | "contact" | "list" | "segment" | "all_contacts";
             item_detail: {
                 /** @enum {string} */
                 status: "available" | "compacted";
@@ -4670,56 +4746,68 @@ export interface components {
                 };
             };
         };
+        /** @description Import limits for the authenticated account, derived from its deliverability standing. Clients render these values and never recompute them. */
         ImportPolicy: {
-            /** @example 94371840 */
-            max_file_size_bytes?: number;
-            /** @example 90 */
-            max_file_size_mb?: number;
-            /** @example 20000 */
-            auto_max_rows?: number;
-            /** @example 250000 */
-            contact_us_max_rows?: number;
-            /** @example 3 */
-            max_active_imports?: number;
+            /**
+             * @description The account standing the limits derive from.
+             * @example trusted
+             */
+            standing: string;
+            /**
+             * @description Row ceiling for one import. Null means no row ceiling for this standing.
+             * @example null
+             */
+            max_rows: number | null;
+            /** @example 2147483648 */
+            max_file_size_bytes: number;
+            /** @example 2048 */
+            max_file_size_mb: number;
             /** @example 10 */
-            create_rate_limit_per_minute?: number;
+            max_active_imports: number;
+            /** @example 10 */
+            create_rate_limit_per_minute: number;
             /** @example 30 */
-            direct_upload_rate_limit_per_minute?: number;
+            direct_upload_rate_limit_per_minute: number;
+            write_modes: ("real" | "shadow" | "dry_run")[];
         };
         ImportSpec: {
             /** @enum {string} */
-            resource?: "contacts";
+            resource: "contacts";
             /** @enum {string} */
-            parser?: "default";
+            parser: "default";
             ui?: {
                 [key: string]: unknown;
             };
             required_rules?: {
                 [key: string]: unknown;
             };
-            fields?: {
+            fields: {
                 [key: string]: unknown;
             }[];
-            guardrails?: components["schemas"]["ImportPolicy"];
+            guardrails: components["schemas"]["ImportPolicy"];
         };
+        /** @description How this import stands against the account's standing row limit. */
         ImportGuardrail: {
             /**
-             * @description Import guardrail classification based on contact count.
+             * @description auto when the row count is within the standing limit; contact_us when it is above it and the import halted.
              * @enum {string}
              */
-            tier?: "auto" | "hold_sends" | "contact_us";
+            tier: "auto" | "contact_us";
             /**
              * @description Client-facing guardrail status vocabulary.
              * @enum {string}
              */
-            status?: "ok" | "requires_review" | "contact_sales";
+            status: "ok" | "contact_sales";
             /**
-             * @description Maximum self-serve import contact count before contact-us routing.
+             * @description The account standing the limit derives from.
+             * @example probation
+             */
+            standing: string;
+            /**
+             * @description Row ceiling for the standing. Null means no row ceiling.
              * @example 250000
              */
-            contact_us_ceiling?: number;
-            /** @description True when the import is large enough to be flagged for review. Contacts are still created and sends are not automatically held. */
-            sends_held?: boolean;
+            max_rows: number | null;
         };
         Import: {
             id?: number;
@@ -5046,6 +5134,7 @@ export interface components {
             templates?: components["schemas"]["Template"][];
         };
         CampaignDeliverySummary: {
+            capacity_recovery?: components["schemas"]["DeliveryCapacityRecovery"];
             campaign_send_token: string | null;
             /** @enum {string} */
             status: "sending" | "completed" | "paused";
@@ -5056,6 +5145,7 @@ export interface components {
             pending: number;
         };
         CampaignDeliveryProgress: {
+            capacity_recovery?: components["schemas"]["DeliveryCapacityRecovery"];
             campaign_send_token: string | null;
             /** @enum {string} */
             status: "not_started" | "sending" | "completed" | "paused";
@@ -5868,6 +5958,10 @@ export interface components {
             id?: number;
             name?: string;
             active?: boolean;
+            probation_recipient_cap_24h?: number;
+            standard_recipient_cap_24h?: number;
+            /** @description Full allowance on earning Trusted; zero represents a contracted unlimited allowance. Credits and safety remain separate. */
+            trusted_recipient_cap_24h?: number;
             entitlements?: components["schemas"]["BillingEntitlements"];
         };
         /** @description Email template design document */
@@ -9580,6 +9674,42 @@ export interface operations {
             };
             404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationError"];
+        };
+    };
+    getCampaignReadiness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Structural readiness with optional capacity guidance */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ready: boolean;
+                        /** @constant */
+                        authority: "structural_readiness_only";
+                        note: string;
+                        checks: {
+                            name: string;
+                            passed: boolean;
+                            message: string;
+                            audience_count?: number | null;
+                        }[];
+                        blocking_issues: string[];
+                        capacity_recovery?: components["schemas"]["DeliveryCapacityRecovery"] | null;
+                    };
+                };
+            };
+            404: components["responses"]["NotFound"];
         };
     };
     getCampaignDeliveryProgress: {
