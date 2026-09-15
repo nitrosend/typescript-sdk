@@ -2827,10 +2827,33 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Prepare the reserved Nitrosend sender
-         * @description Idempotently materializes the brand-owned logical Domain and sending identity under the verified shared nitrosend.net root. The operation is database-only: it makes no DNS, Vercel, Cloudflare, or SES call and never sends or retains email. Brand creation itself reserves only the slug.
+         * Reserve and prepare the Nitrosend sender
+         * @description Reserves the brand's Nitrosend address when the brand has none (using the optional chosen `subdomain` and `local_part`, otherwise the company-derived name) and idempotently materializes the brand-owned logical Domain and sending identity under the verified shared nitrosend.net root. The operation is database-only: it makes no DNS, Vercel, Cloudflare, or SES call and never sends or retains email. A brand that already owns a namespace gets it back unchanged; the body is ignored because an allocated name is immutable.
          */
         post: operations["prepareBrandSending"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/brands/{sid}/hosted_sender_availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Brand secure identifier */
+                sid: components["parameters"]["BrandSid"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Check whether a Nitrosend address can be reserved
+         * @description Advisory read for choosing the brand's Nitrosend address before it is reserved. Uses the same normaliser and uniqueness check as reservation, so the returned `subdomain` is exactly what `prepare_sending` would reserve. Never writes.
+         */
+        get: operations["getHostedSenderAvailability"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4085,11 +4108,28 @@ export interface components {
             local_part_editable?: boolean;
             /** @constant */
             fqdn_changeable?: false;
+            /** @description Candidate offered while the brand has no namespace (`namespace_status: unreserved`): derived from the company name, or from the account owner while the Brand Kit is incomplete. Absent once a name is reserved, because an allocated name never changes, and absent when nothing safe can be derived. */
+            suggested_subdomain?: string | null;
         };
         BrandSubdomainPreparationResponse: {
             /** @enum {string} */
             status: "ready" | "unavailable";
             brand_subdomain: components["schemas"]["BrandSubdomain"];
+        };
+        HostedSenderAvailability: {
+            /** @description The normalised label that would be reserved (or the input when unsafe) */
+            subdomain: string;
+            fqdn?: string | null;
+            available: boolean;
+            /**
+             * @description Why the address is unavailable; null when available
+             * @enum {string|null}
+             */
+            reason?: "taken" | "unsafe" | "reserved" | "local_part_invalid" | null;
+            /** @description The normalised local part that would be reserved (the allocator's default when none was given), or the input when it is invalid. */
+            local_part?: string | null;
+            /** @description The exact address that would be reserved; null when unavailable for a policy reason */
+            from_email?: string | null;
         };
         BrandDeletionSafetyImpact: {
             contacts: number;
@@ -4143,6 +4183,7 @@ export interface components {
                 required?: string[];
                 recommended?: string[];
             };
+            /** @description Each of the four cards counts individually; `total` is always 4 so every client surface shows the same "N of 4". */
             progress?: {
                 completed?: number;
                 total?: number;
@@ -4155,7 +4196,7 @@ export interface components {
         };
         SetupCenterCard: {
             /** @enum {string} */
-            id?: "brand_kit_scan" | "dns" | "plan" | "connect_agent" | "import_subscribers" | "connect_transactional";
+            id?: "brand_kit_scan" | "dns" | "import_subscribers" | "connect_agent";
             complete?: boolean;
             acknowledged?: boolean;
             /** Format: date-time */
@@ -12053,7 +12094,16 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Chosen subdomain label under the hosted apex; validated by the same policy as company-derived names. */
+                    subdomain?: string;
+                    /** @description Local part for the sender address (defaults to `hello`). */
+                    local_part?: string;
+                };
+            };
+        };
         responses: {
             /** @description The brand-subdomain sender is ready */
             200: {
@@ -12064,7 +12114,7 @@ export interface operations {
                     "application/json": components["schemas"]["BrandSubdomainPreparationResponse"];
                 };
             };
-            /** @description The account or Brand Kit is not eligible for materialization */
+            /** @description The account or Brand Kit is not eligible, or the chosen name was rejected. `error_code` is one of `subdomain_taken`, `subdomain_unsafe`, `local_part_invalid`, `brand_identity_required`, `brand_identity_review_required`, `sender_identity_limit_reached`, `sender_identity_retired`, `brand_inactive`, `sending_paused`, `subscription_inactive`, `principal_email_missing`. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12082,6 +12132,35 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+        };
+    };
+    getHostedSenderAvailability: {
+        parameters: {
+            query: {
+                /** @description Requested subdomain label under the hosted apex */
+                subdomain: string;
+                /** @description Requested local part, checked with the same policy reservation applies; omitted means the allocator's default. */
+                local_part?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Brand secure identifier */
+                sid: components["parameters"]["BrandSid"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Availability result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HostedSenderAvailability"];
+                };
+            };
+            404: components["responses"]["NotFound"];
         };
     };
     getBrandDeletionSafety: {
@@ -12262,7 +12341,7 @@ export interface operations {
                     seen?: boolean;
                     dismissed?: boolean;
                     /** @enum {string} */
-                    card?: "brand_kit_scan" | "dns" | "plan" | "connect_agent" | "import_subscribers" | "connect_transactional";
+                    card?: "brand_kit_scan" | "dns" | "import_subscribers" | "connect_agent";
                     metadata?: {
                         [key: string]: unknown;
                     };
