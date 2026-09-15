@@ -1,5 +1,12 @@
 import type { NitrosendClient } from '../client.js';
-import type { Brand, BrandSubdomainPreparationResponse, CreateBrand, UpdateBrand } from '../types.js';
+import type {
+  Brand,
+  BrandSubdomainPreparationResponse,
+  CreateBrand,
+  HostedSenderAvailability,
+  PrepareBrandSubdomainRequest,
+  UpdateBrand,
+} from '../types.js';
 
 export class BrandResource {
   private readonly client: NitrosendClient;
@@ -33,10 +40,23 @@ export class BrandResource {
     return data;
   }
 
-  async prepareBrandSubdomain(sid: string): Promise<BrandSubdomainPreparationResponse> {
+  async prepareBrandSubdomain(
+    sid: string,
+    params?: PrepareBrandSubdomainRequest,
+  ): Promise<BrandSubdomainPreparationResponse> {
     const { data } = await this.client.request<BrandSubdomainPreparationResponse>(
       'POST',
       `${this.path}/${sid}/prepare_sending`,
+      params ? { body: params as Record<string, unknown> } : undefined,
+    );
+    return data;
+  }
+
+  async hostedSenderAvailability(sid: string, subdomain: string): Promise<HostedSenderAvailability> {
+    const { data } = await this.client.request<HostedSenderAvailability>(
+      'GET',
+      `${this.path}/${sid}/hosted_sender_availability`,
+      { query: { subdomain } },
     );
     return data;
   }

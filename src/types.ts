@@ -165,11 +165,29 @@ export interface BrandSubdomain {
   localPart?: string;
   localPartEditable?: boolean;
   fqdnChangeable: false;
+  /** Company-derived candidate offered while the brand has no namespace; absent once reserved. */
+  suggestedSubdomain?: string;
+}
+
+export interface PrepareBrandSubdomainRequest {
+  /** Chosen subdomain label under the hosted apex; ignored once the brand owns a namespace. */
+  subdomain?: string;
+  /** Sender local part (defaults to `hello`). */
+  localPart?: string;
 }
 
 export interface BrandSubdomainPreparationResponse {
-  status: 'provisioning' | 'ready';
+  status: 'ready' | 'unavailable';
   brandSubdomain: BrandSubdomain;
+}
+
+export interface HostedSenderAvailability {
+  subdomain: string;
+  fqdn: string | null;
+  available: boolean;
+  reason: 'taken' | 'unsafe' | 'reserved' | 'local_part_invalid' | null;
+  localPart: string | null;
+  fromEmail: string | null;
 }
 
 export interface Contact {
