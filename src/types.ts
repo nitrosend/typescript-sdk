@@ -190,6 +190,30 @@ export interface HostedSenderAvailability {
   fromEmail: string | null;
 }
 
+export interface AudienceReachFit {
+  planId: number;
+  slug: string;
+  name: string;
+  tierGroup: string;
+  /** Recipients per 24 hours at the account's sending standing; null when unlimited. */
+  dailyCap: number | null;
+  /** Emails available within the month (what remains now, or a candidate's first month); null when unlimited. */
+  capacity: number | null;
+  /** Days until everyone has been reached once; null when the month cannot hold the send. */
+  daysToReach: number | null;
+  covers: boolean;
+}
+
+export interface AudienceReach {
+  audience: number;
+  cohort: string;
+  current: AudienceReachFit | null;
+  recommended: AudienceReachFit | null;
+  covered: boolean;
+  /** The one sentence every surface shows; null when covered. */
+  summary: string | null;
+}
+
 export interface Contact {
   id: number;
   brandId: number;
