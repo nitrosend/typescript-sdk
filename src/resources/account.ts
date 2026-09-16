@@ -1,5 +1,5 @@
 import type { NitrosendClient } from '../client.js';
-import type { Account, UpdateAccount } from '../types.js';
+import type { Account, AudienceReach, UpdateAccount } from '../types.js';
 
 export class AccountResource {
   private readonly client: NitrosendClient;
@@ -11,6 +11,14 @@ export class AccountResource {
 
   async get(): Promise<Account> {
     const { data } = await this.client.request<Account>('GET', this.path);
+    return data;
+  }
+
+  /** How far one send to `audience` recipients gets on the current plan, and the listed plan that covers it. */
+  async reach(audience: number): Promise<AudienceReach> {
+    const { data } = await this.client.request<AudienceReach>('GET', `${this.path}/reach`, {
+      query: { audience },
+    });
     return data;
   }
 

@@ -733,6 +733,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/my/account/reach": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How far one send to an audience gets on the current plan
+         * @description Read-only. Reports the recipients per day at the account's sending standing and the emails left this month on the current plan, whether they cover a full send to the audience, and the cheapest listed plan whose first month would. The numbers come from the plan catalogue and this month's usage; the summary sentence is the one every surface shows. Silent (no summary, no recommendation) when the current plan covers the audience.
+         */
+        get: operations["getAccountReach"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/my/account/memberships": {
         parameters: {
             query?: never;
@@ -4115,6 +4135,33 @@ export interface components {
             /** @enum {string} */
             status: "ready" | "unavailable";
             brand_subdomain: components["schemas"]["BrandSubdomain"];
+        };
+        AudienceReachFit: {
+            plan_id: number;
+            slug: string;
+            name: string;
+            tier_group: string;
+            /** @description Recipients per 24 hours at the account's sending standing; null when unlimited */
+            daily_cap?: number | null;
+            /** @description Emails available within the month: what remains on the current plan, the first month's allowance on a candidate; null when unlimited */
+            capacity?: number | null;
+            /** @description Days until everyone has been reached once; null when the month cannot hold the send */
+            days_to_reach?: number | null;
+            /** @description Whether one full send to the audience fits within the month */
+            covers: boolean;
+        };
+        AudienceReach: {
+            audience: number;
+            /** @description The account's deliverability cohort the daily caps are read at */
+            cohort: string;
+            /** @description The current plan; null when the account has no subscription */
+            current?: components["schemas"]["AudienceReachFit"] | null;
+            /** @description The cheapest listed plan above the current one whose first month holds the send; null when the current plan covers it or no listed plan would */
+            recommended?: components["schemas"]["AudienceReachFit"] | null;
+            /** @description Whether the current plan covers a full send */
+            covered: boolean;
+            /** @description The one sentence every surface shows; null when covered */
+            summary?: string | null;
         };
         HostedSenderAvailability: {
             /** @description The normalised label that would be reserved (or the input when unsafe) */
@@ -7587,6 +7634,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccountTeam"];
+                };
+            };
+        };
+    };
+    getAccountReach: {
+        parameters: {
+            query: {
+                /** @description Number of recipients of one full send */
+                audience: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reach on the current plan and the recommended plan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudienceReach"];
+                };
+            };
+            /** @description audience is not a positive whole number (error_code audience_invalid) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
