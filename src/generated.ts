@@ -1741,7 +1741,7 @@ export interface paths {
         };
         /**
          * Read saved campaign readiness and capacity guidance
-         * @description Read-only structural checks and the deduplicated saved audience count. Capacity warnings are informational, not approval or admission gates. Save pending draft changes before requesting this projection.
+         * @description Read-only structural checks and the deduplicated saved audience count. Capacity warnings are informational, not approval or admission gates. Email drafts also include an informational allowance for new content reviews; previously reviewed content and exempt workloads may remain eligible. Save pending draft changes before requesting this projection.
          */
         get: operations["getCampaignReadiness"];
         put?: never;
@@ -4374,6 +4374,36 @@ export interface components {
             retry_at?: string;
             /** Format: date-time */
             observed_at: string;
+        };
+        /** @description Read-only account allowance for potentially reviewable new email content. Informational only; it neither authorizes delivery nor blocks approval. Non-email readiness omits this property. Remaining allowance and reset times are omitted when unavailable or not applicable. Exhaustion does not imply that cached content or exempt workloads cannot be sent. */
+        DeliveryReviewBudgetStatus: {
+            /** @enum {string} */
+            status: "available" | "exhausted" | "not_applicable" | "unavailable";
+            /** @constant */
+            assessment_scope: "new_content_review";
+            /** @constant */
+            channel: "email";
+            /** Format: date-time */
+            observed_at: string;
+            message: string;
+            note: string;
+            /** @constant */
+            reason_code?: "delivery_evidence_pending";
+            /**
+             * Format: date-time
+             * @description UTC release of the blocking calendar allowance; present when exhausted.
+             */
+            retry_at?: string;
+            remaining?: {
+                hour: number;
+                day: number;
+            };
+            resets_at?: {
+                /** Format: date-time */
+                hour: string;
+                /** Format: date-time */
+                day: string;
+            };
         };
         /** @description Informational recovery at 80 percent used, exhaustion, or when a campaign exceeds remaining allowance. Never denies a send or promises that payment or verification bypasses safety. Actions come from the shared backend projection; only offer verification when new valid proof can improve standing. */
         DeliveryCapacityRecovery: {
@@ -9826,6 +9856,7 @@ export interface operations {
                         }[];
                         blocking_issues: string[];
                         capacity_recovery?: components["schemas"]["DeliveryCapacityRecovery"] | null;
+                        review_budget?: components["schemas"]["DeliveryReviewBudgetStatus"];
                     };
                 };
             };
