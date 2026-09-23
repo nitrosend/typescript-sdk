@@ -242,7 +242,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Inspect email sender capacity and pacing
+         * Inspect the email sending allowance and pacing
          * @description Returns a read-only projection of the persisted delivery controls for
          *     the selected Brand. This endpoint does not authorize or reserve a send;
          *     every send still passes through the canonical admission authority.
@@ -1994,7 +1994,8 @@ export interface paths {
          *     faces: its original art direction (design/preview_html) and a
          *     brand-matched variant with the palette overrides stripped so the
          *     account's colors flow in (branded_design/branded_preview_html).
-         *     Sourced from `config/email_templates.yml`.
+         *     Sourced from the canonical catalog in `config/email_templates/`,
+         *     ordered by `config/email_templates/index.yml`.
          */
         get: operations["listEmailTemplateLibrary"];
         put?: never;
@@ -2083,12 +2084,31 @@ export interface paths {
          *     `revision_id` asserts that the named revision is still the current
          *     draft; a stale assertion returns 409. On an already-live flow,
          *     `status: live` without `revision_id` is a status no-op and does not
-         *     publish pending changes. On a paused flow, it resumes the existing
-         *     active revision without publishing pending changes. For either live or
-         *     paused flows, supplying the current draft revision requests publication
-         *     of that draft.
+         *     publish pending changes. Restarting a paused flow with contacts already
+         *     in progress requires `resume_mode`. A plain restart is refused when the
+         *     flow has unpublished changes; supply the current draft revision to
+         *     publish those changes as part of the restart.
          */
         patch: operations["updateFlow"];
+        trace?: never;
+    };
+    "/v1/my/flows/{id}/resume_plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Preview the choices for restarting a paused flow */
+        get: operations["getFlowResumePlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/my/flows/spec": {
@@ -2587,16 +2607,64 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Connect customer-data Stripe integration
-         * @description Connects a customer's own Stripe account using a Restricted API Key and
-         *     Stripe data webhooks for `/hooks/stripe_data`. When the key can create
-         *     webhook endpoints, Nitrosend creates the endpoint and stores its returned
-         *     signing secret. Otherwise provide `signing_secret` manually. The key
-         *     needs read access for customers, subscriptions, invoices, charges and
-         *     refunds, plus write access for webhook endpoints for one-paste setup.
-         *     This is isolated from Nitrosend billing webhooks at `/hooks/stripe`.
+         * Start Stripe App OAuth connect flow
+         * @description Returns the Nitrosend Stripe App install link for the authenticated
+         *     account and brand. The link carries a signed state and the API callback
+         *     URI; installing the app grants Nitrosend read access to customers,
+         *     subscriptions, invoices, charges, refunds and events. Pass `mode: test`
+         *     for the app's test-mode install link. No keys are pasted; tokens are
+         *     refreshed server-side. Events for connected accounts arrive on
+         *     `/hooks/stripe_apps`, isolated from Nitrosend billing webhooks at
+         *     `/hooks/stripe`.
          */
         post: operations["connectStripeIntegration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/stripe/install": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Public Stripe App install entry
+         * @description The Stripe App Marketplace install URL. Sets a nonce cookie and redirects
+         *     to the Stripe App install link for the requested mode. The callback
+         *     provisions a Nitrosend account for a new email, or asks an existing
+         *     user to sign in and connect from the integrations page.
+         */
+        get: operations["stripeAppInstall"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/stripe/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stripe App OAuth callback endpoint
+         * @description Public callback endpoint used by Stripe after the app is installed.
+         *     Verifies signed state, exchanges the auth code with the mode-matched
+         *     developer key, persists the integration and enqueues initial sync. A
+         *     signed-in connect renders the countdown page; the public install door
+         *     redirects into the app (new account) or to sign in (existing account).
+         */
+        get: operations["stripeOauthCallback"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2662,6 +2730,31 @@ export interface paths {
         get: operations["shopifyOauthCallback"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hooks/stripe_apps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Receive a Stripe App event for a connected account
+         * @description Events from every Stripe account that installed the Nitrosend app,
+         *     delivered to the platform's connected-account webhook endpoint. The
+         *     signature is verified with the app endpoint secret (live or test),
+         *     the connection is resolved from `account` and `livemode`, and the
+         *     event is processed on that integration's execution lane. Events for
+         *     accounts that are not connected are acknowledged and dropped.
+         */
+        post: operations["receiveStripeAppWebhook"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3198,6 +3291,49 @@ export interface paths {
         put?: never;
         /** Mark a successfully executed paid operation consumed */
         post: operations["consumePaidActionIntent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a canonical email template for guest editing
+         * @description Returns one known system catalog template as concrete, validated editor
+         *     JSON. Catalog theme markers are resolved before the response. The
+         *     response contains no account-specific data and does not create a saved
+         *     template.
+         */
+        get: operations["getPublicEmailCatalogTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/templates/spec": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the email editor schema for guest editing
+         * @description Returns the canonical component and theme schema used by the email editor.
+         */
+        get: operations["getPublicEmailComponentSpec"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3797,9 +3933,9 @@ export interface components {
             plan_id?: number;
             plan_name?: string | null;
             /** @enum {string|null} */
-            billing_provider?: "shopify" | "stripe" | "vercel" | null;
+            billing_provider?: "shopify" | "stripe" | "stripe_projects" | "vercel" | "aws" | null;
             /** @enum {string|null} */
-            source_billing_provider?: "shopify" | "stripe" | "vercel" | null;
+            source_billing_provider?: "shopify" | "stripe" | "stripe_projects" | "vercel" | "aws" | null;
             billing_migration_required?: boolean;
             /** Format: uri */
             manage_url?: string | null;
@@ -4349,25 +4485,23 @@ export interface components {
         };
         DeliveryStatusIssue: {
             /** @enum {string} */
-            control: "account_status" | "brand" | "sender_identity" | "commercial_capacity" | "identity_capacity" | "brand_subdomain_capacity";
+            control: "account_status" | "brand" | "sender_identity" | "commercial_capacity";
             /** @enum {string} */
-            reason_code: "sending_paused" | "brand_unavailable" | "sender_not_ready" | "sending_capacity_reached" | "sender_capacity_reached" | "brand_subdomain_capacity_reached" | "delivery_evidence_pending";
+            reason_code: "sending_paused" | "brand_unavailable" | "sender_not_ready" | "sending_capacity_reached" | "delivery_evidence_pending";
             retryable: boolean;
             /** Format: date-time */
             retry_at?: string;
         };
         DeliveryStatus: {
             /** @constant */
-            assessment_scope: "sender_capacity";
+            assessment_scope: "account_capacity";
             /** @enum {string} */
             admission_status: "allowed" | "deferred" | "denied";
             commercial_capacity: components["schemas"]["DeliveryCapacity"];
             capacity_recovery?: components["schemas"]["DeliveryCapacityRecovery"];
-            identity_capacity: components["schemas"]["DeliveryCapacity"];
-            brand_subdomain_capacity: components["schemas"]["DeliveryCapacity"];
             pacing_state: components["schemas"]["DeliveryPacingState"];
             /** @enum {string} */
-            blocking_control?: "account_status" | "brand" | "sender_identity" | "commercial_capacity" | "identity_capacity" | "brand_subdomain_capacity";
+            blocking_control?: "account_status" | "brand" | "sender_identity" | "commercial_capacity";
             reason_code?: string;
             issues: components["schemas"]["DeliveryStatusIssue"][];
             /** Format: date-time */
@@ -4380,9 +4514,9 @@ export interface components {
             /** @enum {string} */
             state: "approaching" | "reached" | "campaign_exceeds_remaining";
             /** @enum {string} */
-            reason_code: "sending_capacity_warning" | "sending_capacity_reached" | "sender_capacity_reached" | "brand_subdomain_capacity_reached";
+            reason_code: "sending_capacity_warning" | "sending_capacity_reached";
             /** @enum {string} */
-            blocking_control: "commercial_capacity" | "identity_capacity" | "brand_subdomain_capacity";
+            blocking_control: "commercial_capacity";
             usage_percent: number;
             requested_quantity?: number;
             label: string;
@@ -4448,6 +4582,8 @@ export interface components {
             quote_digest?: string;
             /** Format: date-time */
             expires_at: string;
+            /** Format: date-time */
+            execution_deadline_at?: string | null;
         };
         ValidationOperationFunding: {
             /** @constant */
@@ -5419,6 +5555,16 @@ export interface components {
             branded_design?: components["schemas"]["EmailDesign"];
             branded_preview_html?: string | null;
         };
+        PublicEmailCatalogTemplate: {
+            id: string;
+            name: string;
+            category: string;
+            tags: string[];
+            description: string;
+            subject: string;
+            preheader: string;
+            design: components["schemas"]["EmailDesign"];
+        };
         TemplateSummary: {
             id?: number;
             name?: string | null;
@@ -5449,11 +5595,35 @@ export interface components {
             sent_count?: number;
             engagement?: components["schemas"]["Engagement"];
             revenue?: components["schemas"]["RevenueReport"];
+            draft_revision_id?: number | null;
+            draft_revision_digest?: string | null;
+            /** @enum {string|null} */
+            draft_approval_state?: "pending_review" | "approved" | "rejected" | null;
+            active_revision_id?: number | null;
+            active_revision_digest?: string | null;
+            has_unpublished_changes?: boolean;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
             updated_at?: string;
             templates?: components["schemas"]["Template"][];
+        };
+        FlowResumePlan: {
+            flow_id: number;
+            /** @enum {string} */
+            status: "draft" | "live" | "paused" | "archived" | "cancelled";
+            open_journey_count: number;
+            contact_count: number;
+            waiting_journey_count: number;
+            scheduled_journey_count: number;
+            has_unpublished_changes: boolean;
+            /** @enum {string|null} */
+            draft_approval_state?: "pending_review" | "approved" | "rejected" | null;
+            requires_choice: boolean;
+            allowed_modes: ("new_contacts_only" | "continue_existing")[];
+            /** @enum {string} */
+            recommended_mode: "new_contacts_only";
+            continue_release_interval_seconds: number;
         };
         /** @description Lean flow template card for index listings. */
         FlowTemplate: {
@@ -6063,7 +6233,21 @@ export interface components {
                 text_color?: string;
                 font_body?: string;
                 font_heading?: string;
+                heading_size?: number;
+                body_size?: number;
+                radius?: number;
+                /** @enum {string} */
+                spacing_density?: "compact" | "normal" | "spacious";
+                button_background_color?: string;
+                button_text_color?: string;
+                button_padding?: string;
                 logo_url?: string;
+                company_name?: string;
+                physical_address?: string;
+                social_links?: {
+                    platform?: string;
+                    url?: string;
+                }[];
             };
         };
         /** @description Advisory accessibility lint result for rendered email previews */
@@ -6085,18 +6269,24 @@ export interface components {
         };
         EmailSection: {
             /** @enum {string} */
-            type: "header" | "hero" | "text" | "image" | "button" | "columns" | "product" | "social" | "divider" | "spacer" | "footer";
+            type: "header" | "hero" | "text" | "image" | "button" | "columns" | "product" | "products" | "gallery" | "social" | "divider" | "spacer" | "footer";
             /** @description Section-specific properties (see email component spec) */
             props?: {
                 [key: string]: unknown;
             };
             styles?: {
                 background_color?: string;
+                section_background_color?: string;
                 padding?: string;
                 /** @enum {string} */
                 align?: "left" | "center" | "right";
+                /** @enum {string} */
+                scale?: "display" | "poster";
                 font_size?: number;
                 text_color?: string;
+                /** @enum {string} */
+                shape?: "square" | "rounded" | "arch" | "circle";
+                remove_gap?: boolean;
                 border_radius?: number;
             };
         };
@@ -6105,49 +6295,79 @@ export interface components {
          *     description, props (with types, required flags, defaults), and tips.
          */
         EmailComponentSpec: {
-            version?: number;
-            design_guidelines?: string;
-            components?: {
-                type?: string;
-                description?: string;
+            version: number;
+            design_guidelines: string;
+            components: {
+                type: string;
+                description: string;
                 tips?: string[];
-                props?: {
+                props: {
                     [key: string]: {
-                        type?: string;
+                        type: string;
                         required?: boolean;
                         default?: unknown;
                         description?: string;
                         enum?: string[];
+                        items?: {
+                            [key: string]: {
+                                type: string;
+                                description: string;
+                            };
+                        };
+                        server_owned?: boolean;
+                        theme_key?: string;
                     };
                 };
             }[];
             /** @description Standard per-section style attribute registry. */
-            style_attributes?: {
-                key?: string;
-                label?: string;
+            style_attributes: {
+                key: string;
+                label: string;
                 /** @enum {string} */
-                type?: "color" | "spacing" | "enum" | "number";
-                applies_to?: unknown;
+                type: "color" | "spacing" | "enum" | "number" | "boolean";
+                applies_to: unknown;
+                default?: unknown;
                 theme_fallback?: string;
-                description?: string;
+                description: string;
+                min?: number;
+                max?: number;
                 values?: string[];
-                target?: {
+                target: {
                     /** @enum {string} */
-                    el?: "section" | "content";
+                    el: "section" | "content" | "shape";
                     attr?: string;
                 };
             }[];
-            variables?: string[];
+            preview_document: {
+                parameter: string;
+                description: string;
+                example: {
+                    [key: string]: unknown;
+                };
+            };
+            /** @description Merge variables grouped by source namespace. */
+            variables: {
+                [key: string]: {
+                    name: string;
+                    description: string;
+                }[];
+            };
+            filters: {
+                name: string;
+                syntax: string;
+                description: string;
+            }[];
             /** @description Brand Kit theme attribute registry (single source of truth for the editor). */
-            theme_attributes?: {
-                key?: string;
-                label?: string;
+            theme_attributes: {
+                key: string;
+                label: string;
                 /** @enum {string} */
-                type?: "color" | "font" | "number" | "enum" | "string" | "image";
+                type: "color" | "font" | "number" | "enum" | "spacing" | "string" | "image" | "array";
+                default?: unknown;
                 /** @enum {string} */
-                category?: "color" | "font" | "visual_identity" | "identity";
+                category: "color" | "font" | "visual_identity" | "identity";
                 slot?: string;
-                surfaces?: string[];
+                surfaces: string[];
                 min?: number;
                 max?: number;
                 values?: string[];
@@ -6160,7 +6380,10 @@ export interface components {
                     [key: string]: string;
                 };
                 column?: boolean;
+                storage?: string;
+                placeholder?: string;
                 value_resolver?: string;
+                server_owned?: boolean;
                 description?: string;
             }[];
         };
@@ -10590,8 +10813,13 @@ export interface operations {
                     status?: "draft" | "live" | "paused" | "archived" | "cancelled";
                     /** @enum {string} */
                     approval_state?: "approved" | "rejected";
-                    /** @description Optional current-draft assertion for approval_state and status=live publication. Omission derives the current draft for approval_state and for publication from draft status. On an already-live flow, status=live without revision_id is a no-op; on a paused flow, it resumes the active revision. Supply the current draft revision to publish pending changes from either state. */
+                    /** @description Optional current-draft assertion for approval_state and status=live publication. Omission derives the current draft for approval_state and for publication from draft status. On an already-live flow, status=live without revision_id is a no-op. Supply the current draft revision to publish pending changes while restarting a paused flow. */
                     revision_id?: number | null;
+                    /**
+                     * @description Required when restarting a paused flow with contacts in progress. new_contacts_only stops their current journeys. continue_existing restarts waits and releases next steps gradually.
+                     * @enum {string}
+                     */
+                    resume_mode?: "new_contacts_only" | "continue_existing";
                     /** @description Exact optimistic concurrency token for authored graph changes. */
                     expected_draft_revision_id?: number | null;
                     /**
@@ -10625,6 +10853,29 @@ export interface operations {
                 };
             };
             422: components["responses"]["ValidationError"];
+        };
+    };
+    getFlowResumePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current restart impact and available choices */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlowResumePlan"];
+                };
+            };
+            404: components["responses"]["NotFound"];
         };
     };
     getFlowSpec: {
@@ -11492,35 +11743,111 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "application/json": {
-                    stripe: {
-                        /** @description Customer Stripe Restricted API Key beginning with `rk_`. */
-                        api_key: string;
-                        /** @description Optional Stripe webhook signing secret for `/hooks/stripe_data` when automatic endpoint creation is unavailable. */
-                        signing_secret?: string;
+                    stripe?: {
+                        /**
+                         * @default live
+                         * @enum {string}
+                         */
+                        mode?: "live" | "test";
                     };
                 };
             };
         };
         responses: {
-            /** @description Stripe integration connected */
+            /** @description OAuth authorize URL */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        integration_id: number;
-                        status: string;
-                        /** @enum {string} */
-                        provider: "stripe";
+                        /** Format: uri */
+                        authorize_url: string;
                     };
                 };
             };
             401: components["responses"]["Unauthorized"];
             422: components["responses"]["ValidationError"];
+        };
+    };
+    stripeAppInstall: {
+        parameters: {
+            query?: {
+                mode?: "live" | "test";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect to the Stripe App install link */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The Stripe App is not configured */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    stripeOauthCallback: {
+        parameters: {
+            query?: {
+                code?: string;
+                state?: string;
+                error?: string;
+                error_description?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OAuth callback processed (HTML) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Install door redirect into the app or to sign in */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid callback request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description OAuth exchange failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
         };
     };
     attioOauthCallback: {
@@ -11652,6 +11979,46 @@ export interface operations {
                 content: {
                     "text/html": string;
                 };
+            };
+        };
+    };
+    receiveStripeAppWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                "Stripe-Signature": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Verified event acknowledged */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid signature or unconfigured secret */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Verified event could not be enqueued */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -12920,6 +13287,51 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getPublicEmailCatalogTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Canonical catalog template */
+            200: {
+                headers: {
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicEmailCatalogTemplate"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getPublicEmailComponentSpec: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Email component schema */
+            200: {
+                headers: {
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailComponentSpec"];
                 };
             };
         };
