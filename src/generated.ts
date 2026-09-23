@@ -5383,6 +5383,72 @@ export interface components {
             /** @description Suggested polling delay for active sends. */
             poll_after_seconds: number | null;
         };
+        MailActionDescription: {
+            /** @enum {string} */
+            "@context": "https://mailschema.org/contexts/map-0.1.jsonld";
+            /** @enum {string} */
+            "@type": "MailAction";
+            /**
+             * Format: uri
+             * @description UUID URN identifying the interaction.
+             */
+            "@id": string;
+            /** @enum {string} */
+            profile: "https://mailschema.org/profiles/map/0.1";
+            type: components["schemas"]["MailActionTypeReference"];
+            /** Format: date-time */
+            describedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            service: components["schemas"]["MailActionService"];
+            target: components["schemas"]["MailActionTarget"];
+            operations: components["schemas"]["MailActionOperation"][];
+        };
+        MailActionTypeReference: {
+            /** Format: uri */
+            id: string;
+            version: string;
+            recordDigest: string;
+        };
+        MailActionTarget: {
+            /** Format: uri */
+            id: string;
+            revision: string;
+            title?: string;
+            digest: string;
+        };
+        MailActionOperation: {
+            id: string;
+            name: string;
+            description: string;
+            /** Format: uri */
+            inputSchema: string;
+        };
+        MailActionService: {
+            /** Format: uri */
+            id: string;
+            name: string;
+            execution: {
+                /** Format: uri */
+                url: string;
+                /** @enum {string} */
+                method: "POST";
+                /** @enum {string} */
+                requestMediaType: "application/json";
+                /** @enum {string} */
+                resultMediaType: "application/json";
+                resultUrlTemplate: string;
+                resultRetentionSeconds: number;
+            };
+            /** Format: uri */
+            humanUrl: string;
+            authorization: {
+                /** @enum {string} */
+                kind: "service-configured";
+                schemes: ("oauth2" | "bearer" | "session")[];
+                audience?: string;
+            };
+        };
         Message: {
             id?: number;
             /** @enum {string} */
@@ -12892,6 +12958,8 @@ export interface operations {
                     data?: {
                         [key: string]: unknown;
                     };
+                    /** @description A Mail Action Protocol 0.1 description. Nitrosend validates it against the canonical MailSchema schema and adds it as an application/ld+json alternative. Delivery requires a raw-message provider. The description carries no service credential or authorization grant. */
+                    mail_action?: components["schemas"]["MailActionDescription"];
                     /** @description Stable idempotency key (alternative to header). Strongly recommended; mandatory from 2026-09-01. */
                     idempotency_key?: string;
                 };
