@@ -2135,6 +2135,152 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/my/map/flows/{flow_id}/content-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: number;
+            };
+            cookie?: never;
+        };
+        /** Describe Content Review for the current flow revision */
+        get: operations["getFlowContentReviewDescription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/map/flows/{flow_id}/content-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: number;
+            };
+            cookie?: never;
+        };
+        /** List recorded Content Review requests for a flow */
+        get: operations["listFlowContentReviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/map/flows/{flow_id}/revisions/{revision_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: number;
+                revision_id: number;
+            };
+            cookie?: never;
+        };
+        /** Review one immutable flow revision named by a MAP description */
+        get: operations["getFlowRevisionReview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/.well-known/oauth-protected-resource/v1/my/map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Protected resource metadata for the MAP API
+         * @description OAuth 2.0 Protected Resource Metadata (RFC 9728) for the Mail Action
+         *     Protocol API. `resource` is the audience every MAP description names.
+         *     `map_services` lists the exact execution and result routes a client may
+         *     configure instead of trusting URLs from an email.
+         */
+        get: operations["getMailActionProtectedResource"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/map/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute a MAP Content Review request
+         * @description Parses the body as I-JSON, resolves the interaction from its identifier and compares the description digest, then authorizes the caller, checks the current flow revision and durably deduplicates requestId within the account. The credential travels only in the Authorization header. Other methods answer 405. A Content-Type other than application/json, compared case-insensitively, with at most a charset=utf-8 parameter, answers 415.
+         */
+        post: operations["executeMailAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/map/results/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: components["schemas"]["MailActionUuidUrn"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Recover the latest authorized MAP result
+         * @description Returns the latest response recorded for the request, after rechecking access and settling an approval whose deadline has passed: a result, or the correlated problem the request earned.
+         */
+        get: operations["getMailActionResult"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/map/approvals/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: components["schemas"]["MailActionUuidUrn"];
+            };
+            cookie?: never;
+        };
+        /** Review an exact MAP Content Review approval request */
+        get: operations["getMailActionApproval"];
+        put?: never;
+        /**
+         * Approve or decline the exact flow revision in a retained MAP request
+         * @description A decision takes a signed-in person's bearer credential. A browser cookie session is refused with 401, so no cross-site request can decide.
+         */
+        post: operations["decideMailActionApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/my/flow_templates": {
         parameters: {
             query?: never;
@@ -5383,9 +5529,10 @@ export interface components {
             /** @description Suggested polling delay for active sends. */
             poll_after_seconds: number | null;
         };
+        /** @description A Mail Action Protocol 0.2 description. The canonical MailSchema core schema is authoritative; this schema restates its shape. */
         MailActionDescription: {
             /** @enum {string} */
-            "@context": "https://mailschema.org/contexts/map-0.1.jsonld";
+            "@context": "https://mailschema.org/contexts/map-0.2.jsonld";
             /** @enum {string} */
             "@type": "MailAction";
             /**
@@ -5394,21 +5541,30 @@ export interface components {
              */
             "@id": string;
             /** @enum {string} */
-            profile: "https://mailschema.org/profiles/map/0.1";
+            profile: "https://mailschema.org/profiles/map/0.2";
             type: components["schemas"]["MailActionTypeReference"];
             /** Format: date-time */
             describedAt: string;
             /** Format: date-time */
             expiresAt: string;
             service: components["schemas"]["MailActionService"];
+            /**
+             * Format: email
+             * @description The address a possession capability was issued to. Present exactly with possession authority.
+             */
+            recipient?: string;
             target: components["schemas"]["MailActionTarget"];
+            /** @description Defined by the type contract. Content Review 0.3 names the revision this one supersedes. */
+            details?: {
+                [key: string]: unknown;
+            };
             operations: components["schemas"]["MailActionOperation"][];
         };
         MailActionTypeReference: {
             /** Format: uri */
             id: string;
             version: string;
-            recordDigest: string;
+            contractDigest: string;
         };
         MailActionTarget: {
             /** Format: uri */
@@ -5421,33 +5577,212 @@ export interface components {
             id: string;
             name: string;
             description: string;
-            /** Format: uri */
-            inputSchema: string;
         };
         MailActionService: {
             /** Format: uri */
             id: string;
             name: string;
+            /** @enum {string} */
+            authority: "credential" | "possession";
+            /**
+             * Format: uri
+             * @description The RFC 9728 protected resource identifier. Present exactly with credential authority.
+             */
+            resource?: string;
             execution: {
                 /** Format: uri */
                 url: string;
-                /** @enum {string} */
-                method: "POST";
-                /** @enum {string} */
-                requestMediaType: "application/json";
-                /** @enum {string} */
-                resultMediaType: "application/json";
                 resultUrlTemplate: string;
                 resultRetentionSeconds: number;
             };
             /** Format: uri */
             humanUrl: string;
-            authorization: {
-                /** @enum {string} */
-                kind: "service-configured";
-                schemes: ("oauth2" | "bearer" | "session")[];
-                audience?: string;
+        };
+        /** @description A MAP 0.2 Content Review request. Its operation decides its input. */
+        MailActionRequest: components["schemas"]["MailActionRequestChanges"] | components["schemas"]["MailActionApprove"];
+        MailActionRequestEnvelope: {
+            /** @constant */
+            kind: "MapRequest";
+            /** @constant */
+            profile: "https://mailschema.org/profiles/map/0.2";
+            requestId: components["schemas"]["MailActionUuidUrn"];
+            interactionId: components["schemas"]["MailActionUuidUrn"];
+            /** @description SHA-256 over the RFC 8785 canonical form of the description exactly as the email carried it. */
+            descriptionDigest: string;
+            type: components["schemas"]["MailActionTypeReference"];
+        };
+        MailActionRequestChanges: {
+            /** @constant */
+            operation?: "request-changes";
+            input?: components["schemas"]["MailActionRequestChangesInput"];
+        } & (components["schemas"]["MailActionRequestEnvelope"] & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            operation: "request-changes";
+        });
+        MailActionApprove: {
+            /** @constant */
+            operation?: "approve";
+            input?: components["schemas"]["MailActionApproveInput"];
+        } & (components["schemas"]["MailActionRequestEnvelope"] & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            operation: "approve";
+        });
+        /** @description A UUID URN, as the MAP 0.2 core defines it. */
+        MailActionUuidUrn: string;
+        /** @description The input of request-changes. */
+        MailActionRequestChangesInput: {
+            /** @description Review feedback on the revision; it must contain a character that is not a space. */
+            feedback: string;
+        };
+        /** @description The input of approve, which is always empty. */
+        MailActionApproveInput: Record<string, never>;
+        MailActionResult: {
+            /** @constant */
+            kind: "MapResult";
+            /** @constant */
+            profile: "https://mailschema.org/profiles/map/0.2";
+            requestId: components["schemas"]["MailActionUuidUrn"];
+            interactionId: components["schemas"]["MailActionUuidUrn"];
+            descriptionDigest: string;
+            type: components["schemas"]["MailActionTypeReference"];
+            /** @enum {string} */
+            operation: "request-changes" | "approve";
+            /** @enum {string} */
+            state: "accepted" | "completed" | "failed" | "pending" | "approval-required";
+            target: components["schemas"]["MailActionTarget"];
+            /** Format: date-time */
+            recordedAt: string;
+            /** Format: uri */
+            resultUrl: string;
+            /**
+             * Format: uri
+             * @description Present exactly when the state is approval-required. A person decides there.
+             */
+            approvalUrl?: string;
+            /**
+             * @description Present exactly when the state is failed.
+             * @enum {string}
+             */
+            reason?: "declined" | "stale-target" | "expired" | "superseded";
+            /** @description request-changes: feedbackRecorded and a service-issued feedbackId. approve: decision approved when completed; empty otherwise. */
+            output: {
+                [key: string]: unknown;
             };
+        };
+        /** @description RFC 9728 protected resource metadata with the MAP `map_services` parameter. */
+        MailActionProtectedResource: {
+            /** Format: uri */
+            resource: string;
+            resource_name?: string;
+            bearer_methods_supported: "header"[];
+            map_services: {
+                /** Format: uri */
+                id: string;
+                profiles: string[];
+                /** Format: uri */
+                execution_url: string;
+                result_url_template: string;
+            }[];
+        };
+        MailActionProblem: {
+            /** Format: uri */
+            type: string;
+            title: string;
+            status: number;
+            detail: string;
+            /** Format: uri */
+            instance: string;
+            /** @constant */
+            profile: "https://mailschema.org/profiles/map/0.2";
+            requestId: components["schemas"]["MailActionUuidUrn"];
+            interactionId: components["schemas"]["MailActionUuidUrn"];
+            /** @enum {string} */
+            code: "invalid-request" | "refused" | "result-not-found" | "stale-target" | "idempotency-conflict" | "request-in-progress" | "already-decided" | "expired-interaction" | "unsupported-type" | "unsupported-operation";
+            /** @description For stale-target, the target the service now holds. */
+            target?: components["schemas"]["MailActionTarget"];
+            /** @description For invalid-request input, each problem with a JSON Pointer into the request input. */
+            errors?: {
+                detail: string;
+                pointer: string;
+            }[];
+        };
+        /** @description Correlated MAP result lookup failure. No interaction identifier is invented when no retained result exists. */
+        MailActionResultNotFoundProblem: {
+            /** @constant */
+            type: "https://mailschema.org/problems/result-not-found";
+            title: string;
+            /** @constant */
+            status: 404;
+            detail: string;
+            /** Format: uri */
+            instance: string;
+            /** @constant */
+            profile: "https://mailschema.org/profiles/map/0.2";
+            requestId: components["schemas"]["MailActionUuidUrn"];
+            /** @constant */
+            code: "result-not-found";
+        };
+        MailActionApproval: {
+            request_id: components["schemas"]["MailActionUuidUrn"];
+            /** @enum {string} */
+            state: "approval-required" | "completed" | "failed";
+            /** Format: date-time */
+            requested_at: string;
+            flow: {
+                id: number;
+                name: string;
+            };
+            revision: {
+                id: number;
+                digest: string;
+                /** @enum {string} */
+                approval_state: "pending_review" | "approved" | "rejected";
+                current: boolean;
+                trigger: {
+                    event: string;
+                };
+                steps: {
+                    name: string;
+                    type: string;
+                    wait?: number | null;
+                    subject?: string | null;
+                    preheader?: string | null;
+                    from_name?: string | null;
+                    from_email?: string | null;
+                    html?: string | null;
+                }[];
+            };
+            result: components["schemas"]["MailActionResult"] | components["schemas"]["MailActionProblem"];
+        };
+        MailActionRevisionReview: {
+            /** @enum {string} */
+            state: "approval-required" | "completed" | "failed";
+            flow: {
+                id: number;
+                name: string;
+            };
+            revision: components["schemas"]["MailActionApproval"]["revision"];
+        };
+        /** @description Plain RFC 9457 Problem Details for an HTTP answer that is not about a MAP request, made before the body or credential is read. */
+        HttpProblem: {
+            /** @enum {string} */
+            type: "about:blank";
+            title: string;
+            status: number;
+        };
+        /** @description Ordinary RFC 9457 Problem Details for a MAP failure whose request and interaction identifiers could not be recovered. */
+        MailActionUncorrelatedProblem: {
+            /** Format: uri */
+            type: string;
+            title: string;
+            status: number;
+            detail: string;
         };
         Message: {
             id?: number;
@@ -6538,6 +6873,16 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description MAP request or result lookup without acceptable Nitrosend authentication */
+        MailActionAuthenticationRequired: {
+            headers: {
+                "WWW-Authenticate"?: string;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["MailActionUncorrelatedProblem"];
             };
         };
         /** @description Not authorized */
@@ -10964,6 +11309,388 @@ export interface operations {
             };
         };
     };
+    getFlowContentReviewDescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The MAP 0.2 Content Review 0.3 description of the current immutable draft revision */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailActionDescription"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    listFlowContentReviews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Most recent durable review requests and results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        request_id: string;
+                        revision_id: number;
+                        /** @enum {string} */
+                        operation: "request-changes" | "approve";
+                        input: {
+                            [key: string]: unknown;
+                        };
+                        result: components["schemas"]["MailActionResult"] | components["schemas"]["MailActionProblem"];
+                        /** Format: date-time */
+                        recorded_at: string;
+                    }[];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getFlowRevisionReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: number;
+                revision_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The exact revision and its current approval state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailActionRevisionReview"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getMailActionProtectedResource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Protected resource metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailActionProtectedResource"];
+                };
+            };
+        };
+    };
+    executeMailAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MailActionRequest"];
+            };
+        };
+        responses: {
+            /** @description The review feedback or approval was recorded */
+            200: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailActionResult"];
+                };
+            };
+            /** @description The request was recorded and requires human approval */
+            202: {
+                headers: {
+                    Location?: string;
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailActionResult"];
+                };
+            };
+            /** @description Invalid MAP or Content Review request. Malformed or non-I-JSON bodies, requests that fail the core request definition, unknown interactions and differing description digests have no MAP correlation members; invalid input is correlated and carries errors. */
+            400: {
+                headers: {
+                    /** @description The result resource, present when the problem is correlated with a request */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["MailActionProblem"] | components["schemas"]["MailActionUncorrelatedProblem"];
+                };
+            };
+            401: components["responses"]["MailActionAuthenticationRequired"];
+            /** @description The authenticated principal cannot use this interaction or request identifier */
+            403: {
+                headers: {
+                    /** @description The result resource, present when the problem is correlated with a request */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["MailActionProblem"] | components["schemas"]["MailActionUncorrelatedProblem"];
+                };
+            };
+            /** @description Stale target, idempotency conflict, or an interaction another request already decided */
+            409: {
+                headers: {
+                    /** @description The result resource, present when the problem is correlated with a request */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["MailActionProblem"];
+                };
+            };
+            /** @description Interaction and retained result expired */
+            410: {
+                headers: {
+                    /** @description The result resource, present when the problem is correlated with a request */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["MailActionProblem"];
+                };
+            };
+            /** @description The Content-Type is not application/json with at most a charset=utf-8 parameter */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpProblem"];
+                };
+            };
+            /** @description Unsupported type or operation */
+            422: {
+                headers: {
+                    /** @description The result resource, present when the problem is correlated with a request */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["MailActionProblem"];
+                };
+            };
+        };
+    };
+    getMailActionResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: components["schemas"]["MailActionUuidUrn"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Latest retained result */
+            200: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailActionResult"];
+                };
+            };
+            /** @description Latest retained result, still awaiting human approval */
+            202: {
+                headers: {
+                    Location?: string;
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailActionResult"];
+                };
+            };
+            /** @description The recorded invalid-request problem, with its input errors */
+            400: {
+                headers: {
+                    /** @description The result resource, present when the problem is correlated with a request */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["MailActionProblem"];
+                };
+            };
+            401: components["responses"]["MailActionAuthenticationRequired"];
+            /** @description Result access refused */
+            403: {
+                headers: {
+                    /** @description The result resource, present when the problem is correlated with a request */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["MailActionProblem"] | components["schemas"]["MailActionUncorrelatedProblem"];
+                };
+            };
+            /** @description No retained result in the authenticated scope, as a correlated result-not-found problem. A path whose identifier is not a UUID URN names no result resource and gets a plain 404. */
+            404: {
+                headers: {
+                    /** @description The result resource, present when the problem is correlated with a request */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["MailActionResultNotFoundProblem"] | components["schemas"]["HttpProblem"];
+                };
+            };
+            /** @description The recorded stale-target or already-decided problem */
+            409: {
+                headers: {
+                    /** @description The result resource, present when the problem is correlated with a request */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["MailActionProblem"];
+                };
+            };
+            /** @description The recorded expired-interaction problem */
+            410: {
+                headers: {
+                    /** @description The result resource, present when the problem is correlated with a request */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["MailActionProblem"];
+                };
+            };
+            /** @description The recorded unsupported-type or unsupported-operation problem */
+            422: {
+                headers: {
+                    /** @description The result resource, present when the problem is correlated with a request */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["MailActionProblem"];
+                };
+            };
+        };
+    };
+    getMailActionApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: components["schemas"]["MailActionUuidUrn"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The immutable flow revision and current decision state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailActionApproval"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    decideMailActionApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: components["schemas"]["MailActionUuidUrn"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    decision: "approve" | "decline";
+                };
+            };
+        };
+        responses: {
+            /** @description The retained MAP result reached its completed or failed terminal state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailActionApproval"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            /** @description The caller cannot decide this request, or the service's content and sending rules refuse the approval (`error_code: approval_refused`). The retained result stays `approval-required` and can still be declined. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            /** @description The request was not proposed for approval, so there is nothing to decide. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listFlowTemplates: {
         parameters: {
             query?: never;
@@ -12958,7 +13685,7 @@ export interface operations {
                     data?: {
                         [key: string]: unknown;
                     };
-                    /** @description A Mail Action Protocol 0.1 description. Nitrosend validates it against the canonical MailSchema schema and adds it as an application/ld+json alternative. Delivery requires a raw-message provider. The description carries no service credential or authorization grant. */
+                    /** @description A Mail Action Protocol 0.2 description of any type with credential authority. Nitrosend does not send possession descriptions. It parses the description as I-JSON within the MAP limits, validates it against the canonical MailSchema core schema and adds it as a designated application/ld+json part in a partial multipart/related representation. Delivery requires a raw-message provider. The description carries no service credential or authorization grant. */
                     mail_action?: components["schemas"]["MailActionDescription"];
                     /** @description Stable idempotency key (alternative to header). Strongly recommended; mandatory from 2026-09-01. */
                     idempotency_key?: string;
