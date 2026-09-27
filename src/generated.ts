@@ -4279,6 +4279,16 @@ export interface components {
             /** @enum {string} */
             next_step: "consent";
         };
+        /** @description Optional first-touch attribution captured by the client. Send URLs without query strings; utm values are capped at 100 characters server-side. */
+        FirstTouchAttributionContext: {
+            landing_url?: string | null;
+            referrer_url?: string | null;
+            /** Format: date-time */
+            captured_at?: string | null;
+            utm_source?: string | null;
+            utm_medium?: string | null;
+            utm_campaign?: string | null;
+        };
         OAuthLaunchRequest: {
             /** @enum {string} */
             provider: "google_oauth2" | "github";
@@ -4297,6 +4307,10 @@ export interface components {
              * @description Required when `auth_intent=agent`; must point to the frontend `/oauth/connect` route.
              */
             resume_url?: string | null;
+            invite_token?: string | null;
+            referral_code?: string | null;
+            rewardful_referral_id?: string | null;
+            attribution_context?: components["schemas"]["FirstTouchAttributionContext"];
         };
         OAuthLaunchResponse: {
             /** Format: uri */
@@ -7083,6 +7097,7 @@ export interface operations {
                         password: string;
                         /** Format: password */
                         password_confirmation?: string;
+                        attribution_context?: components["schemas"]["FirstTouchAttributionContext"];
                     };
                 };
             };
