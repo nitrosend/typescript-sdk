@@ -74,7 +74,6 @@ export interface Account {
   access: AccountAccess | null;
   billing?: AccountBilling;
   team?: AccountTeamSummary;
-  brands: Brand[];
   createdAt: string;
   updatedAt: string;
 }

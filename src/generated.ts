@@ -3974,7 +3974,6 @@ export interface components {
                     ai_used?: number;
                 };
             };
-            brands?: components["schemas"]["Brand"][];
             /** @description Present for direct access and omitted from delegated account-list projections. */
             team?: {
                 seat_limit?: number;
@@ -4379,7 +4378,7 @@ export interface components {
                 bypassing_domains?: string[];
                 message?: string | null;
             };
-            /** @description Count of subscribed contacts in this brand. */
+            /** @description Count of subscribed contacts in this brand, recounted in the background at most every 10 minutes while the brand is listed or fetched. */
             subscribed_contacts_count?: number;
             /** Format: uri */
             readonly logo_url?: string | null;
@@ -7411,7 +7410,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Account with brands and billing */
+            /** @description Account with billing. Brands are listed by GET /v1/my/brands. */
             200: {
                 headers: {
                     [name: string]: unknown;
