@@ -96,7 +96,7 @@ const msg = await ns.messages.send({
 | --- | --- |
 | `ns.account` | `get`, `update` |
 | `ns.contacts` | `list`\*, `get`, `create`, `update`, `delete` |
-| `ns.campaigns` | `list`, `get`, `create`, `update`, `send`, `delete` |
+| `ns.campaigns` | `list`, `get`, `create`, `update`, `send`, `sendTest`, `delete` |
 | `ns.flows` | `list`, `get`, `create`, `update`, `delete`, `spec` |
 | `ns.templates` | `list`, `get`, `update`, `sendTest`, `preview`, `spec` |
 | `ns.events` | `list`\*, `get`, `create`, `delete` |

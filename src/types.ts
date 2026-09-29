@@ -622,9 +622,11 @@ export interface CreateFlow {
   status?: string;
   trigger?: Record<string, unknown>;
   steps?: Record<string, unknown>[];
+  /** Generated per call when omitted. Reuse a key only to retry the same create. */
+  idempotencyKey?: string;
 }
 
-export type UpdateFlow = CreateFlow;
+export type UpdateFlow = Omit<CreateFlow, 'idempotencyKey'>;
 
 export interface UpdateTemplate {
   name?: string;
@@ -637,9 +639,35 @@ export interface UpdateTemplate {
   design?: Record<string, unknown>;
 }
 
+/**
+ * Recipients for a test email. Omit `email` and `contactId` to use the brand's
+ * saved test recipients. Tests go to the account's own people and verified
+ * domains, plus up to 10 other addresses per 30 days.
+ */
 export interface SendTestParams {
+  email?: string | string[];
+  /** Sends to this contact, personalized with their data. */
   contactId?: number;
-  email?: string[];
+  /** Personalizes a test to `email` with this contact's data, without mailing the contact. */
+  sampleContactId?: number;
+  /** Generated per call when omitted. Reuse a key only to retry the same send. */
+  idempotencyKey?: string;
+}
+
+export interface SendTestRecipientResult {
+  email: string;
+  success: boolean;
+  status: 'delivered' | 'pending' | 'failed';
+  code: string;
+  /** Why this recipient's test was not sent. */
+  error?: string;
+  messageId?: number;
+}
+
+/** A refused recipient is reported in `results`; the others still get the test. */
+export interface SendTestResult {
+  sent: number;
+  results: SendTestRecipientResult[];
 }
 
 export interface PreviewParams {
