@@ -7,6 +7,15 @@ const PASS_THROUGH = new Set([
   'onboarding', 'headers', 'tags',
 ]);
 
+/**
+ * The header for an endpoint that requires an Idempotency-Key. A call without
+ * a key gets a fresh one, which the client's own retries reuse; pass a key
+ * only to retry the same request yourself.
+ */
+export function idempotencyHeader(key?: string): Record<string, string> {
+  return { 'Idempotency-Key': key ?? globalThis.crypto.randomUUID() };
+}
+
 export function camelToSnake(str: string): string {
   return str
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')

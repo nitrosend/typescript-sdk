@@ -1,5 +1,6 @@
 import type { NitrosendClient } from '../client.js';
-import type { Template, TemplateSummary, UpdateTemplate, SendTestParams, PreviewParams } from '../types.js';
+import type { Template, TemplateSummary, UpdateTemplate, SendTestParams, SendTestResult, PreviewParams } from '../types.js';
+import { idempotencyHeader } from '../utils.js';
 
 export class Templates {
   private readonly client: NitrosendClient;
@@ -26,10 +27,13 @@ export class Templates {
     return data;
   }
 
-  async sendTest(id: number, params?: SendTestParams): Promise<void> {
-    await this.client.request('POST', `${this.path}/${id}/send_test`, {
-      body: params as Record<string, unknown>,
+  async sendTest(id: number, params: SendTestParams = {}): Promise<SendTestResult> {
+    const { idempotencyKey, ...body } = params;
+    const { data } = await this.client.request<SendTestResult>('POST', `${this.path}/${id}/send_test`, {
+      body: body as Record<string, unknown>,
+      headers: idempotencyHeader(idempotencyKey),
     });
+    return data;
   }
 
   async preview(params: PreviewParams): Promise<{ html: string }> {
