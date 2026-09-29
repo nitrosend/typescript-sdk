@@ -189,6 +189,32 @@ export interface HostedSenderAvailability {
   fromEmail: string | null;
 }
 
+/**
+ * What the owner of a suspended account is told and can do. A deliverability
+ * pause names the metric and the fix (`reason`, `whatToDo`); any other
+ * suspension is opaque. `recourse` is `review` for an automated hold (see
+ * `account.requestReview`) or `appeal` for an operator suspension (contact
+ * support).
+ */
+export interface SendingPause {
+  sendingPaused: true;
+  reason?: 'critical_bounce_rate' | 'critical_complaint_rate';
+  occurredAt: string;
+  recourse: 'review' | 'appeal';
+  reviewRequestedAt?: string;
+  headline: string;
+  detail: string;
+  whatToDo?: string[];
+  requestReview: string;
+  recoveryActions: Array<{
+    type: 'verify_list' | 'request_review' | 'contact_support';
+    label: string;
+    url?: string;
+    method?: 'POST';
+    path?: string;
+  }>;
+}
+
 export interface AudienceReachFit {
   planId: number;
   slug: string;
