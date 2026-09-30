@@ -1,5 +1,5 @@
 import type { NitrosendClient } from '../client.js';
-import type { Account, AudienceReach, SendingPause, UpdateAccount } from '../types.js';
+import type { Account, AudienceReach, UpdateAccount } from '../types.js';
 
 export class AccountResource {
   private readonly client: NitrosendClient;
@@ -20,18 +20,6 @@ export class AccountResource {
       query: { audience },
     });
     return data;
-  }
-
-  /**
-   * Asks a person to review an automated sending hold (`recourse: 'review'`).
-   * Opens one request per hold; repeating the call returns the same pause.
-   * Requires an account admin.
-   */
-  async requestReview(params: { note?: string } = {}): Promise<SendingPause> {
-    const { data } = await this.client.request<{ sendingPause: SendingPause }>('POST', `${this.path}/review_request`, {
-      body: params as Record<string, unknown>,
-    });
-    return data.sendingPause;
   }
 
   async update(params: UpdateAccount): Promise<Account> {
