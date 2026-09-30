@@ -119,6 +119,10 @@ export interface Brand {
   emailFromEmail: string | null;
   emailReplyTo: string | null;
   emailViewOnline: boolean;
+  /** When false, this brand's emails carry no open-tracking pixel. */
+  emailTrackOpens: boolean;
+  /** When false, this brand's links are not rewritten for click tracking. */
+  emailTrackClicks: boolean;
   fromEmailDomainStatus: 'blank' | 'verified' | 'unverified';
   effectiveFromEmail: string | null;
   effectiveReplyTo: string | null;
@@ -577,6 +581,8 @@ export interface CreateBrand {
   emailFromEmail?: string;
   emailReplyTo?: string;
   emailViewOnline?: boolean;
+  emailTrackOpens?: boolean;
+  emailTrackClicks?: boolean;
   testEmailRecipients?: string[];
   links?: BrandLink[];
   defaultHeader?: Record<string, unknown>;
