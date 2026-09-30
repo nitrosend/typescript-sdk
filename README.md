@@ -159,6 +159,9 @@ requests older than five minutes are refused.
 import express from 'express';
 import { verifyWebhook, WebhookVerificationError } from '@nitrosend/sdk';
 
+const app = express();
+
+// Register this route before any JSON body parser, so the raw body reaches it.
 app.post('/webhooks/nitrosend', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
     const event = await verifyWebhook(req.body.toString('utf8'), req.headers, process.env.NITROSEND_WEBHOOK_SECRET!);
