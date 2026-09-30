@@ -94,7 +94,7 @@ const msg = await ns.messages.send({
 
 | Resource | Methods |
 | --- | --- |
-| `ns.account` | `get`, `update`, `reach`, `requestReview` |
+| `ns.account` | `get`, `update`, `reach` |
 | `ns.contacts` | `list`\*, `get`, `create`, `update`, `delete` |
 | `ns.campaigns` | `list`, `get`, `create`, `update`, `send`, `sendTest`, `delete` |
 | `ns.flows` | `list`, `get`, `create`, `update`, `delete`, `spec` |
