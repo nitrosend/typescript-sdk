@@ -13,9 +13,11 @@ import { Messages } from './resources/messages.js';
 import { Suppressions } from './resources/suppressions.js';
 import { Imports } from './resources/imports.js';
 import { Images } from './resources/images.js';
+import { Webhooks } from './resources/webhooks.js';
 
 export { NitrosendError, BadRequestError, AuthenticationError, PaymentRequiredError, ForbiddenError, NotFoundError, ValidationError, RateLimitError } from './errors.js';
 export type { PaginatedResponse, PaginationMeta } from './pagination.js';
+export { verifyWebhook, WebhookVerificationError, type VerifyWebhookOptions, type WebhookHeaders } from './webhook.js';
 export type * from './types.js';
 
 export class Nitrosend {
@@ -33,6 +35,7 @@ export class Nitrosend {
   readonly suppressions: Suppressions;
   readonly imports: Imports;
   readonly images: Images;
+  readonly webhooks: Webhooks;
 
   constructor(apiKeyOrOptions: string | ClientOptions) {
     const options = typeof apiKeyOrOptions === 'string'
@@ -54,5 +57,6 @@ export class Nitrosend {
     this.suppressions = new Suppressions(client);
     this.imports = new Imports(client);
     this.images = new Images(client);
+    this.webhooks = new Webhooks(client);
   }
 }

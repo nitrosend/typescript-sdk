@@ -15,7 +15,7 @@ npm install @nitrosend/sdk
 ## Get your API key
 
 1. Log in at [app.nitrosend.com](https://app.nitrosend.com)
-2. Go to **Brand > API Keys**
+2. Go to **Settings > API Keys**
 3. Copy your live key (starts with `nskey_live_`)
 
 ## Server SDK vs. browser client
@@ -106,6 +106,8 @@ const msg = await ns.messages.send({
 | `ns.lists` | `list`, `get`, `create`, `update`, `delete` |
 | `ns.messages` | `list`\*, `get`, `send` |
 | `ns.images` | `ingest`, `createDirectUpload` |
+| `ns.suppressions` | `list`\* |
+| `ns.webhooks` | `list`\*, `get`, `reveal`, `create`, `update`, `delete`, `test`, `deliveries`\*, `verify` |
 
 \* Paginated — returns `{ data, pagination }`.
 
@@ -133,6 +135,51 @@ const asset = await ns.images.ingest({ signedId: upload.signedId });
 
 console.log(asset.mediaUrl); // Use in image.src, product.image_url, logo_url, etc.
 ```
+
+## Webhooks
+
+Nitrosend POSTs a signed event to your endpoint when a transactional email is
+sent, delivered, bounced, complained about, opened, clicked or fails for good.
+Register an endpoint once; the create response carries its signing secret.
+
+```ts
+const webhook = await ns.webhooks.create({
+  url: 'https://example.com/webhooks/nitrosend',
+  events: ['email.delivered', 'email.bounced', 'email.failed'],
+});
+
+console.log(webhook.secret); // whsec_…, keep it in your environment
+```
+
+Verify each request against the raw body before trusting it. Requests are
+signed in the [Standard Webhooks](https://www.standardwebhooks.com) format, and
+requests older than five minutes are refused.
+
+```ts
+import express from 'express';
+import { verifyWebhook, WebhookVerificationError } from '@nitrosend/sdk';
+
+const app = express();
+
+// Register this route before any JSON body parser, so the raw body reaches it.
+app.post('/webhooks/nitrosend', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    const event = await verifyWebhook(req.body.toString('utf8'), req.headers, process.env.NITROSEND_WEBHOOK_SECRET!);
+    if (event.type === 'email.bounced') {
+      // event.data.message_id, event.data.to, event.data.bounce.type
+    }
+    res.sendStatus(200);
+  } catch (error) {
+    if (error instanceof WebhookVerificationError) return res.sendStatus(400);
+    throw error;
+  }
+});
+```
+
+Any 2xx acknowledges an event. Anything else is retried after 1m, 5m, 30m,
+2h, 8h and 24h, and the `webhook-id` header stays the same across retries, so
+drop an id you have already handled. `ns.webhooks.test(id)` sends a sample
+event, and `ns.webhooks.deliveries(id)` lists the last 7 days of deliveries.
 
 ## Pagination
 

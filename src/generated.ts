@@ -1478,7 +1478,13 @@ export interface paths {
         /** List all segments (paginated) */
         get: operations["listSegments"];
         put?: never;
-        /** Create a segment */
+        /**
+         * Create a segment
+         * @description `filters` must contain at least one condition. Empty filters (`[]`,
+         *     `{}` or a group with no conditions) would match every contact, so they
+         *     are rejected with a 422 and `validation_errors.filters`. To reach
+         *     every contact, target the All contacts audience instead of a segment.
+         */
         post: operations["createSegment"];
         delete?: never;
         options?: never;
@@ -1503,7 +1509,13 @@ export interface paths {
         delete: operations["deleteSegment"];
         options?: never;
         head?: never;
-        /** Update a segment */
+        /**
+         * Update a segment
+         * @description An update cannot remove every filter condition from a segment that has
+         *     conditions; that returns a 422 with `validation_errors.filters`.
+         *     Segments stored without conditions before this rule can still be
+         *     renamed or re-saved with empty filters.
+         */
         patch: operations["updateSegment"];
         trace?: never;
     };
@@ -1800,6 +1812,12 @@ export interface paths {
          *     `sample_contact_id` to personalize explicit test recipients without
          *     sending to that contact. The two contact parameters are mutually
          *     exclusive.
+         *     Test emails go to the account's own people (owner, members, an active
+         *     managing account's people) and to addresses at the account's verified
+         *     domains. Up to 10 other addresses per 30 days are allowed; past that,
+         *     each refused recipient is reported in `results` with `status: failed`
+         *     and the reason in `error`, and the other recipients still receive the
+         *     test.
          *     Supply one fresh `Idempotency-Key` for each user-initiated send and
          *     reuse that exact key for transport retries.
          */
@@ -1932,6 +1950,12 @@ export interface paths {
          *     and `sample_contact_id` are mutually exclusive. Omit all recipient
          *     inputs to use the brand's saved test recipients, falling back to the
          *     account owner.
+         *     Test emails go to the account's own people (owner, members, an active
+         *     managing account's people) and to addresses at the account's verified
+         *     domains. Up to 10 other addresses per 30 days are allowed; past that,
+         *     each refused recipient is reported in `results` with `status: failed`
+         *     and the reason in `error`, and the other recipients still receive the
+         *     test.
          *     Supply one fresh `Idempotency-Key` for each user-initiated send and
          *     reuse that exact key for transport retries.
          */
@@ -3320,6 +3344,105 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/my/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List webhooks
+         * @description The current brand's webhook endpoints, oldest first, each with its newest delivery. Secrets are masked.
+         */
+        get: operations["listWebhooks"];
+        put?: never;
+        /**
+         * Register a webhook endpoint
+         * @description Registers an HTTPS endpoint to receive the chosen events for the
+         *     brand's transactional email. The response carries the signing secret
+         *     in full; later reads mask it unless `reveal=true`. A brand can have at
+         *     most 10 webhooks. The URL must resolve only to public addresses.
+         */
+        post: operations["createWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/webhooks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Get a webhook */
+        get: operations["getWebhook"];
+        put?: never;
+        post?: never;
+        /** Delete a webhook and its delivery history */
+        delete: operations["deleteWebhook"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a webhook
+         * @description Changes the URL, the events, or whether the webhook is on. Turning it
+         *     off fails the deliveries it still owed; turning it on clears its
+         *     failing state. Events that occur while it is off are not sent.
+         */
+        patch: operations["updateWebhook"];
+        trace?: never;
+    };
+    "/v1/my/webhooks/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a test event
+         * @description Queues a sample event of the chosen type to this webhook through the
+         *     normal delivery path, signed and retried like a real event. Its data
+         *     carries `test: true` and no message id.
+         */
+        post: operations["testWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/my/webhooks/{id}/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List a webhook's deliveries
+         * @description The last 7 days of deliveries to this webhook, newest first.
+         */
+        get: operations["listWebhookDeliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/my/chat_sessions": {
         parameters: {
             query?: never;
@@ -3648,7 +3771,148 @@ export interface paths {
         trace?: never;
     };
 }
-export type webhooks = Record<string, never>;
+export interface webhooks {
+    "email.sent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The provider accepted the email
+         * @description The provider accepted the email. Carries `sent_at`.
+         */
+        post: operations["emailSentWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "email.delivered": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The provider reported the email delivered to the recipient's server
+         * @description The provider reported the email delivered to the recipient's server.
+         */
+        post: operations["emailDeliveredWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "email.bounced": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The email bounced
+         * @description The email bounced. Carries `bounce`: its `type` (hard or soft) and the provider's `subtype`.
+         */
+        post: operations["emailBouncedWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "email.complained": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The recipient marked the email as spam
+         * @description The recipient marked the email as spam. Carries `complaint.feedback_type`.
+         */
+        post: operations["emailComplainedWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "email.opened": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The recipient opened the email, the first counted open only
+         * @description The recipient opened the email, the first counted open only. Scanner and bot opens are not counted.
+         */
+        post: operations["emailOpenedWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "email.clicked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The recipient clicked a link, the first human click of each link
+         * @description The recipient clicked a link, the first human click of each link. Carries the `url`.
+         */
+        post: operations["emailClickedWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "email.failed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The email failed for good
+         * @description The email failed for good. A failure that will be retried, or a provider outcome that is still unknown, is not reported. Carries `failure`: `code`, `reason` and `category`, as `GET /v1/my/messages/{id}` reports them.
+         */
+        post: operations["emailFailedWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+}
 export interface components {
     schemas: {
         OperatorSupportRequest: {
@@ -3987,6 +4251,31 @@ export interface components {
             created_at?: string;
             /** Format: date-time */
             updated_at?: string;
+        };
+        /** @description What the owner of a suspended account is told. A deliverability pause names the metric and the fix (`reason`, `what_to_do`). Any other suspension is opaque and carries no reason. Recovery actions reach the existing support channel. */
+        SendingPause: {
+            /** @enum {boolean} */
+            sending_paused: true;
+            /**
+             * @description Present only for an explained deliverability pause.
+             * @enum {string}
+             */
+            reason?: "critical_bounce_rate" | "critical_complaint_rate";
+            /** Format: date-time */
+            occurred_at: string;
+            headline: string;
+            detail: string;
+            /** @description Present only for an explained deliverability pause. */
+            what_to_do?: string[];
+            /** @description The instruction an agent relays to the owner. */
+            request_review: string;
+            recovery_actions: {
+                /** @enum {string} */
+                type: "verify_list" | "request_review" | "contact_support";
+                label: string;
+                /** @description App link or support mailto. */
+                url: string;
+            }[];
         };
         AccountResourceUsage: {
             used: number;
@@ -4353,6 +4642,10 @@ export interface components {
             readonly sender_configured?: boolean;
             /** @description Default-off brand setting that injects a campaign view-in-browser link when a verified tracking domain is available. */
             email_view_online?: boolean;
+            /** @description Default-on brand setting. When false, this brand's emails carry no open-tracking pixel and opens from mail already sent are not recorded. */
+            email_track_opens?: boolean;
+            /** @description Default-on brand setting. When false, this brand's links are not rewritten and clicks from mail already sent are not recorded; delivered links keep working. */
+            email_track_clicks?: boolean;
             test_email_recipients?: string[];
             /** @description JSONB — keys are step names, values are completion metadata */
             onboarding_state?: {
@@ -4642,6 +4935,7 @@ export interface components {
             assessment_scope: "account_capacity";
             /** @enum {string} */
             admission_status: "allowed" | "deferred" | "denied";
+            sending_pause?: components["schemas"]["SendingPause"];
             commercial_capacity: components["schemas"]["DeliveryCapacity"];
             capacity_recovery?: components["schemas"]["DeliveryCapacityRecovery"];
             pacing_state: components["schemas"]["DeliveryPacingState"];
@@ -5852,6 +6146,112 @@ export interface components {
             /** Format: date-time */
             updated_at?: string;
         };
+        /** @enum {string} */
+        WebhookEventType: "email.sent" | "email.delivered" | "email.bounced" | "email.complained" | "email.opened" | "email.clicked" | "email.failed";
+        Webhook: {
+            id?: number;
+            /** Format: uri */
+            url?: string;
+            events?: components["schemas"]["WebhookEventType"][];
+            enabled?: boolean;
+            /**
+             * @description `failing` while deliveries fail; an endpoint failing for 3 days is turned off.
+             * @enum {string}
+             */
+            status?: "active" | "failing" | "disabled";
+            /** Format: date-time */
+            failing_since?: string | null;
+            /** @description Standard Webhooks signing secret (`whsec_...`). Masked unless revealed. */
+            secret?: string;
+            last_delivery?: {
+                id?: number;
+                event_type?: components["schemas"]["WebhookEventType"];
+                /** @enum {string} */
+                status?: "pending" | "delivered" | "failed";
+                attempts?: number;
+                last_response_status?: number | null;
+                /** Format: date-time */
+                updated_at?: string;
+            } | null;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        WebhookWriteRequest: {
+            /**
+             * Format: uri
+             * @description HTTPS URL that resolves only to public addresses, without credentials.
+             */
+            url?: string;
+            events?: components["schemas"]["WebhookEventType"][];
+            enabled?: boolean;
+        };
+        WebhookDelivery: {
+            id?: number;
+            /**
+             * Format: uuid
+             * @description Sent as `webhook-id` (`evt_<event_id>`), stable across retries.
+             */
+            event_id?: string;
+            event_type?: components["schemas"]["WebhookEventType"];
+            /** @enum {string} */
+            status?: "pending" | "delivered" | "failed";
+            attempts?: number;
+            last_response_status?: number | null;
+            last_error?: string | null;
+            /** Format: date-time */
+            next_attempt_at?: string;
+            payload?: components["schemas"]["WebhookEventPayload"];
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        WebhookEventPayload: {
+            type: components["schemas"]["WebhookEventType"];
+            /** Format: date-time */
+            timestamp: string;
+            data: {
+                /** @description The id `POST /v1/my/messages` returned. Null on test events. */
+                message_id?: number | null;
+                to?: string;
+                subject?: string | null;
+                /** @description The caller's Idempotency-Key, when one was sent. */
+                idempotency_key?: string | null;
+                /** @description The caller's delivery-option tags. */
+                tags?: {
+                    [key: string]: string;
+                };
+                /** @description Present and true on test events. */
+                test?: boolean;
+                /**
+                 * Format: date-time
+                 * @description email.sent
+                 */
+                sent_at?: string;
+                /** @description email.bounced */
+                bounce?: {
+                    /** @enum {string} */
+                    type?: "hard" | "soft";
+                    /** @description The provider's bounce subtype, e.g. NoEmail or MailboxFull. */
+                    subtype?: string | null;
+                };
+                /** @description email.complained */
+                complaint?: {
+                    /** @description e.g. abuse */
+                    feedback_type?: string | null;
+                };
+                /** @description email.clicked */
+                url?: string;
+                /** @description email.failed */
+                failure?: {
+                    code?: string;
+                    reason?: string;
+                    category?: string;
+                };
+            };
+        };
         ChatMessage: {
             id?: number;
             /** @enum {string} */
@@ -6911,6 +7311,17 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        /** @description A read did not finish within the request's database time limit (`error_code: query_timeout`). Nothing was changed; retry after the Retry-After interval. Any GET can return this. */
+        QueryTimeout: {
+            headers: {
+                /** @description Seconds to wait before retrying. */
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description One-time capability is invalid, expired, rotated, or consumed */
         Gone: {
             headers: {
@@ -6919,6 +7330,13 @@ export interface components {
             content: {
                 "application/json": components["schemas"]["Error"];
             };
+        };
+        /** @description Any 2xx acknowledges the event. Other responses, timeouts after 10 seconds and redirects are retried. */
+        WebhookAcknowledged: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
         };
         /** @description Validation failed */
         ValidationError: {
@@ -6989,6 +7407,16 @@ export interface components {
          *     ignore this header.
          */
         XAccountID: number;
+        /** @description Event id, stable across retries. Receivers drop a repeat of an id they have processed. */
+        WebhookIdHeader: string;
+        /** @description Unix seconds when this attempt was signed. Reject requests more than a few minutes old. */
+        WebhookTimestampHeader: number;
+        /**
+         * @description `v1,` then the base64 HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{raw body}`,
+         *     keyed by the base64-decoded part of the webhook's `whsec_` secret.
+         *     Any Standard Webhooks library verifies it.
+         */
+        WebhookSignatureHeader: string;
         /** @description Exact-request idempotency key; changed normalized input conflicts. */
         IdempotencyKey: string;
     };
@@ -8866,6 +9294,7 @@ export interface operations {
                     "application/json": components["schemas"]["Contact"][];
                 };
             };
+            503: components["responses"]["QueryTimeout"];
         };
     };
     createContact: {
@@ -9894,7 +10323,7 @@ export interface operations {
             content: {
                 "application/json": {
                     name: string;
-                    filters?: components["schemas"]["SegmentFilterExpression"];
+                    filters: components["schemas"]["SegmentFilterExpression"];
                 };
             };
         };
@@ -10463,6 +10892,7 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
+            503: components["responses"]["QueryTimeout"];
         };
     };
     getCampaignDeliveryProgress: {
@@ -10524,6 +10954,12 @@ export interface operations {
                         results?: {
                             email?: string;
                             success?: boolean;
+                            /** @enum {string} */
+                            status?: "delivered" | "pending" | "failed";
+                            code?: string;
+                            /** @description Why this recipient's test was not sent, when status is failed. */
+                            error?: string;
+                            message_id?: number;
                         }[];
                     };
                 };
@@ -10841,6 +11277,12 @@ export interface operations {
                         results?: {
                             email?: string;
                             success?: boolean;
+                            /** @enum {string} */
+                            status?: "delivered" | "pending" | "failed";
+                            code?: string;
+                            /** @description Why this recipient's test was not sent, when status is failed. */
+                            error?: string;
+                            message_id?: number;
                         }[];
                     };
                 };
@@ -13121,6 +13563,10 @@ export interface operations {
                     /** Format: email */
                     email_reply_to?: string;
                     email_view_online?: boolean;
+                    /** @description Inject the open-tracking pixel into this brand's emails. */
+                    email_track_opens?: boolean;
+                    /** @description Rewrite this brand's links for click tracking. */
+                    email_track_clicks?: boolean;
                     test_email_recipients?: string[];
                     links?: {
                         /** Format: uri */
@@ -13286,6 +13732,10 @@ export interface operations {
                     /** Format: email */
                     email_reply_to?: string;
                     email_view_online?: boolean;
+                    /** @description Inject the open-tracking pixel into this brand's emails. */
+                    email_track_opens?: boolean;
+                    /** @description Rewrite this brand's links for click tracking. */
+                    email_track_clicks?: boolean;
                     /** @description Ready brand-owned email sending identity to select through the canonical sender-selection authority. */
                     sender_identity_id?: number;
                     /** @description Visible From local part for the selected sending identity. */
@@ -13878,6 +14328,207 @@ export interface operations {
             };
         };
     };
+    listWebhooks: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                limit?: components["parameters"]["LimitParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated list of webhooks */
+            200: {
+                headers: {
+                    "X-Total-Count"?: number;
+                    "X-Total-Pages"?: number;
+                    "X-Page-Number"?: number;
+                    "X-Next-Page"?: number;
+                    "X-Prev-Page"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Webhook"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookWriteRequest"] & unknown;
+            };
+        };
+        responses: {
+            /** @description Webhook created, secret revealed */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Webhook"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getWebhook: {
+        parameters: {
+            query?: {
+                /** @description Return the signing secret in full. */
+                reveal?: boolean;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Webhook */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Webhook"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Webhook deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Webhook"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description Webhook updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Webhook"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    testWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    type?: components["schemas"]["WebhookEventType"];
+                };
+            };
+        };
+        responses: {
+            /** @description Test event queued */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDelivery"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            /** @description Unknown event type, or the webhook is off */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listWebhookDeliveries: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                limit?: components["parameters"]["LimitParam"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated list of deliveries */
+            200: {
+                headers: {
+                    "X-Total-Count"?: number;
+                    "X-Total-Pages"?: number;
+                    "X-Page-Number"?: number;
+                    "X-Next-Page"?: number;
+                    "X-Prev-Page"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDelivery"][];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
     listChatSessions: {
         parameters: {
             query?: {
@@ -14396,6 +15047,195 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    emailSentWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Event id, stable across retries. Receivers drop a repeat of an id they have processed. */
+                "webhook-id": components["parameters"]["WebhookIdHeader"];
+                /** @description Unix seconds when this attempt was signed. Reject requests more than a few minutes old. */
+                "webhook-timestamp": components["parameters"]["WebhookTimestampHeader"];
+                /**
+                 * @description `v1,` then the base64 HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{raw body}`,
+                 *     keyed by the base64-decoded part of the webhook's `whsec_` secret.
+                 *     Any Standard Webhooks library verifies it.
+                 */
+                "webhook-signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookEventPayload"];
+            };
+        };
+        responses: {
+            200: components["responses"]["WebhookAcknowledged"];
+        };
+    };
+    emailDeliveredWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Event id, stable across retries. Receivers drop a repeat of an id they have processed. */
+                "webhook-id": components["parameters"]["WebhookIdHeader"];
+                /** @description Unix seconds when this attempt was signed. Reject requests more than a few minutes old. */
+                "webhook-timestamp": components["parameters"]["WebhookTimestampHeader"];
+                /**
+                 * @description `v1,` then the base64 HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{raw body}`,
+                 *     keyed by the base64-decoded part of the webhook's `whsec_` secret.
+                 *     Any Standard Webhooks library verifies it.
+                 */
+                "webhook-signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookEventPayload"];
+            };
+        };
+        responses: {
+            200: components["responses"]["WebhookAcknowledged"];
+        };
+    };
+    emailBouncedWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Event id, stable across retries. Receivers drop a repeat of an id they have processed. */
+                "webhook-id": components["parameters"]["WebhookIdHeader"];
+                /** @description Unix seconds when this attempt was signed. Reject requests more than a few minutes old. */
+                "webhook-timestamp": components["parameters"]["WebhookTimestampHeader"];
+                /**
+                 * @description `v1,` then the base64 HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{raw body}`,
+                 *     keyed by the base64-decoded part of the webhook's `whsec_` secret.
+                 *     Any Standard Webhooks library verifies it.
+                 */
+                "webhook-signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookEventPayload"];
+            };
+        };
+        responses: {
+            200: components["responses"]["WebhookAcknowledged"];
+        };
+    };
+    emailComplainedWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Event id, stable across retries. Receivers drop a repeat of an id they have processed. */
+                "webhook-id": components["parameters"]["WebhookIdHeader"];
+                /** @description Unix seconds when this attempt was signed. Reject requests more than a few minutes old. */
+                "webhook-timestamp": components["parameters"]["WebhookTimestampHeader"];
+                /**
+                 * @description `v1,` then the base64 HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{raw body}`,
+                 *     keyed by the base64-decoded part of the webhook's `whsec_` secret.
+                 *     Any Standard Webhooks library verifies it.
+                 */
+                "webhook-signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookEventPayload"];
+            };
+        };
+        responses: {
+            200: components["responses"]["WebhookAcknowledged"];
+        };
+    };
+    emailOpenedWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Event id, stable across retries. Receivers drop a repeat of an id they have processed. */
+                "webhook-id": components["parameters"]["WebhookIdHeader"];
+                /** @description Unix seconds when this attempt was signed. Reject requests more than a few minutes old. */
+                "webhook-timestamp": components["parameters"]["WebhookTimestampHeader"];
+                /**
+                 * @description `v1,` then the base64 HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{raw body}`,
+                 *     keyed by the base64-decoded part of the webhook's `whsec_` secret.
+                 *     Any Standard Webhooks library verifies it.
+                 */
+                "webhook-signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookEventPayload"];
+            };
+        };
+        responses: {
+            200: components["responses"]["WebhookAcknowledged"];
+        };
+    };
+    emailClickedWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Event id, stable across retries. Receivers drop a repeat of an id they have processed. */
+                "webhook-id": components["parameters"]["WebhookIdHeader"];
+                /** @description Unix seconds when this attempt was signed. Reject requests more than a few minutes old. */
+                "webhook-timestamp": components["parameters"]["WebhookTimestampHeader"];
+                /**
+                 * @description `v1,` then the base64 HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{raw body}`,
+                 *     keyed by the base64-decoded part of the webhook's `whsec_` secret.
+                 *     Any Standard Webhooks library verifies it.
+                 */
+                "webhook-signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookEventPayload"];
+            };
+        };
+        responses: {
+            200: components["responses"]["WebhookAcknowledged"];
+        };
+    };
+    emailFailedWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Event id, stable across retries. Receivers drop a repeat of an id they have processed. */
+                "webhook-id": components["parameters"]["WebhookIdHeader"];
+                /** @description Unix seconds when this attempt was signed. Reject requests more than a few minutes old. */
+                "webhook-timestamp": components["parameters"]["WebhookTimestampHeader"];
+                /**
+                 * @description `v1,` then the base64 HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{raw body}`,
+                 *     keyed by the base64-decoded part of the webhook's `whsec_` secret.
+                 *     Any Standard Webhooks library verifies it.
+                 */
+                "webhook-signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookEventPayload"];
+            };
+        };
+        responses: {
+            200: components["responses"]["WebhookAcknowledged"];
         };
     };
 }

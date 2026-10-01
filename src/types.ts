@@ -464,6 +464,95 @@ export interface Suppression {
   updatedAt: string;
 }
 
+export type WebhookEventType =
+  | 'email.sent'
+  | 'email.delivered'
+  | 'email.bounced'
+  | 'email.complained'
+  | 'email.opened'
+  | 'email.clicked'
+  | 'email.failed';
+
+export interface Webhook {
+  id: number;
+  url: string;
+  events: WebhookEventType[];
+  enabled: boolean;
+  /** `failing` while deliveries fail; an endpoint failing for 3 days is turned off. */
+  status: 'active' | 'failing' | 'disabled';
+  failingSince: string | null;
+  /** Standard Webhooks signing secret (`whsec_…`). Masked unless revealed. */
+  secret: string;
+  lastDelivery: {
+    id: number;
+    eventType: WebhookEventType;
+    status: WebhookDelivery['status'];
+    attempts: number;
+    lastResponseStatus: number | null;
+    updatedAt: string;
+  } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WebhookCreateParams {
+  /** HTTPS URL that resolves only to public addresses. */
+  url: string;
+  events: WebhookEventType[];
+}
+
+export interface WebhookUpdateParams {
+  url?: string;
+  events?: WebhookEventType[];
+  /** Turning a webhook off fails the deliveries it still owed. */
+  enabled?: boolean;
+}
+
+/**
+ * The JSON body Nitrosend POSTs to a webhook, exactly as received (its keys
+ * are not camel-cased).
+ */
+export interface WebhookEvent {
+  type: WebhookEventType;
+  timestamp: string;
+  data: {
+    /** The id `messages.send` returned; null on test events. */
+    message_id: number | null;
+    to: string;
+    subject: string | null;
+    /** The Idempotency-Key the message was sent with, when one was sent. */
+    idempotency_key?: string;
+    tags: Record<string, string>;
+    /** Present and true on test events. */
+    test?: true;
+    /** email.sent */
+    sent_at?: string;
+    /** email.bounced */
+    bounce?: { type: 'hard' | 'soft'; subtype: string | null };
+    /** email.complained */
+    complaint?: { feedback_type: string | null };
+    /** email.clicked */
+    url?: string;
+    /** email.failed */
+    failure?: { code: string; reason: string; category: string };
+  };
+}
+
+export interface WebhookDelivery {
+  id: number;
+  /** Sent as `webhook-id` (`evt_<eventId>`), stable across retries. */
+  eventId: string;
+  eventType: WebhookEventType;
+  status: 'pending' | 'delivered' | 'failed';
+  attempts: number;
+  lastResponseStatus: number | null;
+  lastError: string | null;
+  nextAttemptAt: string;
+  payload: WebhookEvent;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** How an import stands against the account's standing row limit. */
 export interface ImportGuardrail {
   tier: 'auto' | 'contact_us';
