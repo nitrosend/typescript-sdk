@@ -471,7 +471,8 @@ export type WebhookEventType =
   | 'email.complained'
   | 'email.opened'
   | 'email.clicked'
-  | 'email.failed';
+  | 'email.failed'
+  | 'email.received';
 
 export interface Webhook {
   id: number;
@@ -510,14 +511,17 @@ export interface WebhookUpdateParams {
 
 /**
  * The JSON body Nitrosend POSTs to a webhook, exactly as received (its keys
- * are not camel-cased).
+ * are not camel-cased). Delivery events describe one of the brand's sends;
+ * `email.received` carries mail that reached a brand inbox and, when it
+ * answers a send, identifies that send the same way.
  */
 export interface WebhookEvent {
   type: WebhookEventType;
   timestamp: string;
   data: {
-    /** The id `messages.send` returned; null on test events. */
+    /** The id `messages.send` returned; null on test events. On `email.received`, the send it answers, or null. */
     message_id: number | null;
+    /** The recipient; on `email.received`, the inbox address. */
     to: string;
     subject: string | null;
     /** The Idempotency-Key the message was sent with, when one was sent. */
@@ -535,6 +539,29 @@ export interface WebhookEvent {
     url?: string;
     /** email.failed */
     failure?: { code: string; reason: string; category: string };
+    /** email.received: the sender. */
+    from?: string;
+    /** email.received: plain-text body, at most 64 KiB. */
+    text?: string | null;
+    /** email.received: HTML body, at most 64 KiB. */
+    html?: string | null;
+    /** email.received: true when either body was cut to 64 KiB. */
+    truncated?: boolean;
+    /** email.received: true for automatic replies such as out-of-office notices. */
+    auto_submitted?: boolean;
+    /** email.received: fetch the bytes through the conversations API. */
+    attachments?: {
+      id: number;
+      filename: string;
+      content_type: string;
+      size: number;
+      /** False when no virus scan covered the file; download it with `acknowledge_unscanned=true`. */
+      scanned: boolean;
+    }[];
+    /** email.received; null on test events. */
+    conversation_id?: number | null;
+    /** email.received; null on test events. */
+    conversation_message_id?: number | null;
   };
 }
 
