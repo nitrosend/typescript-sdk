@@ -139,8 +139,10 @@ console.log(asset.mediaUrl); // Use in image.src, product.image_url, logo_url, e
 ## Webhooks
 
 Nitrosend POSTs a signed event to your endpoint when a transactional email is
-sent, delivered, bounced, complained about, opened, clicked or fails for good.
-Register an endpoint once; the create response carries its signing secret.
+sent, delivered, bounced, complained about, opened, clicked or fails for good,
+and when a reply or new mail reaches one of your brand's inboxes
+(`email.received`). Register an endpoint once; the create response carries its
+signing secret.
 
 ```ts
 const webhook = await ns.webhooks.create({
@@ -167,6 +169,10 @@ app.post('/webhooks/nitrosend', express.raw({ type: 'application/json' }), async
     const event = await verifyWebhook(req.body.toString('utf8'), req.headers, process.env.NITROSEND_WEBHOOK_SECRET!);
     if (event.type === 'email.bounced') {
       // event.data.message_id, event.data.to, event.data.bounce.type
+    }
+    if (event.type === 'email.received') {
+      // event.data.message_id is the send it answers (or null),
+      // event.data.from, event.data.text, event.data.attachments
     }
     res.sendStatus(200);
   } catch (error) {
