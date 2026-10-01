@@ -6750,6 +6750,8 @@ export interface components {
         DomainDnsRecord: {
             record_type?: string;
             name?: string;
+            /** @description Record name relative to the registrable domain, as most registrars' Host field expects; `@` for the apex. */
+            relative_name?: string;
             value?: string;
             priority?: string | null;
             valid?: string | null;
