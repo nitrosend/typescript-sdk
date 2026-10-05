@@ -2054,6 +2054,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/my/flow_demo/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save an edited guest flow after sign-in
+         * @description Copies an anonymous demo draft and its reviewed Brand Kit into the
+         *     authenticated account. The guest token is scoped to one 24-hour demo;
+         *     exact retries return the same flow. The copied flow remains a draft
+         *     and does not send until separately approved and activated.
+         */
+        post: operations["claimGuestFlowDemo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/my/flows": {
         parameters: {
             query?: never;
@@ -3310,8 +3333,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Render a transactional message's HTML for preview
-         * @description Returns the as-composed HTML for a message — from its template (rendered design), raw `html`, or the escaped plain-text `body` — using the same renderer as the send path, for display in a sandboxed iframe. Non-email or unrenderable messages (deleted/design-less template) return a typed empty state (`empty: true`) rather than an error.
+         * Render a message subject and HTML for preview
+         * @description Returns the as-composed subject and HTML for an email message from any send source. The stored subject is interpolated with the same preview merge context as its template (rendered design), raw `html`, or escaped plain-text `body`. Stored message fields are not changed. This is a current preview, not a historical delivered-message snapshot. Non-email or unrenderable messages (deleted/design-less template) return a typed empty body state (`empty: true`) rather than an error; an email subject can still be rendered when the body is empty.
          */
         get: operations["previewMessage"];
         put?: never;
@@ -3560,6 +3583,81 @@ export interface paths {
         put?: never;
         /** Mark a successfully executed paid operation consumed */
         post: operations["consumePaidActionIntent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/flow_demo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read anonymous scan, brand review, or generated draft status */
+        get: operations["getGuestFlowDemo"];
+        put?: never;
+        /**
+         * Start an anonymous brand scan for a flow demo
+         * @description Creates a short-lived isolated demo workspace, not a visitor account. Rate limited by IP.
+         */
+        post: operations["startGuestFlowDemo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/flow_demo/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Keep selected scanned Brand Kit fields */
+        post: operations["reviewGuestFlowBrand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/flow_demo/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate a draft flow for the reviewed brand and goal
+         * @description Reuses the metered flow composer. Retrying the same demo returns the same inactive draft.
+         */
+        post: operations["generateGuestFlowDemo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/flow_demo/spec": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get guest-safe Flow Builder steps and triggers */
+        get: operations["getGuestFlowEditorSpec"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3906,6 +4004,26 @@ export interface webhooks {
          * @description The email failed for good. A failure that will be retried, or a provider outcome that is still unknown, is not reported. Carries `failure`: `code`, `reason` and `category`, as `GET /v1/my/messages/{id}` reports them.
          */
         post: operations["emailFailedWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "email.received": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A message arrived in the brand's inbox
+         * @description A message arrived in one of the brand's inboxes and was not quarantined: a reply to one of the brand's emails, an automatic reply, or new mail to the inbox address. When it answers a send, `message_id`, `idempotency_key` and `tags` identify that send as on every other event. Carries the reply's `from`, `to`, `subject`, `text` and `html` (each body capped at 64 KiB, with `truncated`), `auto_submitted`, and its attachments by id; fetch their bytes from `GET /v1/my/conversations/{id}/messages/{message_id}/attachments/{attachment_id}`, adding `acknowledge_unscanned=true` for an attachment with `scanned: false`. Mail to a domain route without an inbox is not stored and emits nothing.
+         */
+        post: operations["emailReceivedWebhook"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4567,6 +4685,16 @@ export interface components {
             /** @enum {string} */
             next_step: "consent";
         };
+        /** @description Optional first-touch attribution captured by the client. Send URLs without query strings; utm values are capped at 100 characters server-side. */
+        FirstTouchAttributionContext: {
+            landing_url?: string | null;
+            referrer_url?: string | null;
+            /** Format: date-time */
+            captured_at?: string | null;
+            utm_source?: string | null;
+            utm_medium?: string | null;
+            utm_campaign?: string | null;
+        };
         OAuthLaunchRequest: {
             /** @enum {string} */
             provider: "google_oauth2" | "github";
@@ -4585,6 +4713,10 @@ export interface components {
              * @description Required when `auth_intent=agent`; must point to the frontend `/oauth/connect` route.
              */
             resume_url?: string | null;
+            invite_token?: string | null;
+            referral_code?: string | null;
+            rewardful_referral_id?: string | null;
+            attribution_context?: components["schemas"]["FirstTouchAttributionContext"];
         };
         OAuthLaunchResponse: {
             /** Format: uri */
@@ -6147,7 +6279,7 @@ export interface components {
             updated_at?: string;
         };
         /** @enum {string} */
-        WebhookEventType: "email.sent" | "email.delivered" | "email.bounced" | "email.complained" | "email.opened" | "email.clicked" | "email.failed";
+        WebhookEventType: "email.sent" | "email.delivered" | "email.bounced" | "email.complained" | "email.opened" | "email.clicked" | "email.failed" | "email.received";
         Webhook: {
             id?: number;
             /** Format: uri */
@@ -6250,6 +6382,52 @@ export interface components {
                     reason?: string;
                     category?: string;
                 };
+            };
+        };
+        WebhookReceivedEventPayload: {
+            /** @enum {string} */
+            type: "email.received";
+            /**
+             * Format: date-time
+             * @description When the message arrived.
+             */
+            timestamp: string;
+            data: {
+                /** @description The send this message answers, as `POST /v1/my/messages` returned it. Null when it answers none, and on test events. */
+                message_id?: number | null;
+                /** @description The answered send's Idempotency-Key, when the caller sent one. */
+                idempotency_key?: string | null;
+                /** @description The answered send's delivery-option tags; empty when it answers none. */
+                tags?: {
+                    [key: string]: string;
+                };
+                from?: string;
+                /** @description The inbox address it was sent to. */
+                to?: string;
+                subject?: string | null;
+                /** @description Plain-text body */
+                text?: string | null;
+                /** @description HTML body */
+                html?: string | null;
+                /** @description True when either body was cut to 64 KiB. */
+                truncated?: boolean;
+                /** @description True for automatic replies such as out-of-office notices. */
+                auto_submitted?: boolean;
+                attachments?: {
+                    id?: number;
+                    filename?: string;
+                    content_type?: string;
+                    /** @description Bytes. */
+                    size?: number;
+                    /** @description False when no virus scan covered the file; download it with `acknowledge_unscanned=true`. */
+                    scanned?: boolean;
+                }[];
+                /** @description For `GET /v1/my/conversations/{id}`. Null on test events. */
+                conversation_id?: number | null;
+                /** @description Null on test events. */
+                conversation_message_id?: number | null;
+                /** @description Present and true on test events. */
+                test?: boolean;
             };
         };
         ChatMessage: {
@@ -7512,6 +7690,7 @@ export interface operations {
                         password: string;
                         /** Format: password */
                         password_confirmation?: string;
+                        attribution_context?: components["schemas"]["FirstTouchAttributionContext"];
                     };
                 };
             };
@@ -11527,6 +11706,60 @@ export interface operations {
             };
         };
     };
+    claimGuestFlowDemo: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                    name?: string;
+                    graph: {
+                        trigger: {
+                            [key: string]: unknown;
+                        };
+                        steps: {
+                            [key: string]: unknown;
+                        }[];
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Claimed draft flow and target Brand */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        flow_id: number;
+                        brand_sid: string;
+                    };
+                };
+            };
+            /** @description The same demo was claimed with different input or by another account */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Expired demo, invalid graph, or Brand limit reached */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     listFlows: {
         parameters: {
             query?: {
@@ -12405,6 +12638,15 @@ export interface operations {
                 };
             };
             422: components["responses"]["ValidationError"];
+            /** @description Domain setup is temporarily unavailable on Nitrosend's side. `error_code: domain_setup_unavailable` with `retryable: true` means Nitrosend's managed DNS cannot take the domain's records right now; Nitrosend has been alerted, and the same request can be retried later. Other 503s report a DNS delegation or email provider outage. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     getDomain: {
@@ -14273,6 +14515,8 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        /** @description Rendered subject as plain text, not HTML-escaped. Null for non-email messages or a blank stored subject. Independent of the body empty state; consumers should display it as text. */
+                        subject?: string | null;
                         /** @description Rendered HTML, or null when empty is true. */
                         html?: string | null;
                         /**
@@ -14734,6 +14978,172 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getGuestFlowDemo: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Flow-Demo-Token": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current demo stage and its available review or draft data */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Missing or expired demo token */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    startGuestFlowDemo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    domain: string;
+                    goal: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Scan started */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Opaque bearer token kept on the visitor's device */
+                        token: string;
+                        /** @enum {string} */
+                        status: "scanning";
+                    };
+                };
+            };
+            /** @description Invalid or private website URL or goal */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Demo start rate limit reached */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reviewGuestFlowBrand: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Flow-Demo-Token": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    fields: {
+                        [key: string]: unknown;
+                    };
+                    include_logo?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Reviewed brand is ready for flow generation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scan is incomplete or selected field was not offered */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    generateGuestFlowDemo: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Flow-Demo-Token": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Draft flow or in-progress generation status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Brand review missing or generation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getGuestFlowEditorSpec: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Flow editor schema restricted to guest-authorable actions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };
@@ -15234,6 +15644,33 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["WebhookEventPayload"];
+            };
+        };
+        responses: {
+            200: components["responses"]["WebhookAcknowledged"];
+        };
+    };
+    emailReceivedWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Event id, stable across retries. Receivers drop a repeat of an id they have processed. */
+                "webhook-id": components["parameters"]["WebhookIdHeader"];
+                /** @description Unix seconds when this attempt was signed. Reject requests more than a few minutes old. */
+                "webhook-timestamp": components["parameters"]["WebhookTimestampHeader"];
+                /**
+                 * @description `v1,` then the base64 HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{raw body}`,
+                 *     keyed by the base64-decoded part of the webhook's `whsec_` secret.
+                 *     Any Standard Webhooks library verifies it.
+                 */
+                "webhook-signature": components["parameters"]["WebhookSignatureHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookReceivedEventPayload"];
             };
         };
         responses: {
