@@ -11,6 +11,5 @@
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "include": ["src"],
-  "exclude": ["src/generated.ts"]
+  "include": ["src"]
 }
