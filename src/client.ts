@@ -1,5 +1,8 @@
 import { NitrosendError } from './errors.js';
 import { camelToSnake, toSnakeBody, toCamelBody } from './utils.js';
+import { VERSION } from './version.generated.js';
+
+const USER_AGENT = `nitrosend-sdk/${VERSION}`;
 
 export interface ClientOptions {
   apiKey: string;
@@ -43,6 +46,7 @@ export class NitrosendClient {
     const headers: Record<string, string> = {
       'Authorization': `Bearer ${this.apiKey}`,
       'Accept': 'application/json',
+      'User-Agent': USER_AGENT,
       ...(this.brandSid ? { 'X-Brand-SID': this.brandSid } : {}),
       ...options?.headers,
     };

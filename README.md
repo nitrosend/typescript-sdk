@@ -56,6 +56,8 @@ await nitro.contacts.signup({
 });
 ```
 
+Under strict TypeScript 7, `process.env` here needs `"types": ["node"]` in your tsconfig.
+
 ## Quick Start
 
 ```ts
@@ -78,7 +80,7 @@ await ns.events.create({
 });
 
 // Send a campaign
-const campaign = await ns.campaigns.create({ name: 'March Sale', channelType: 'email' });
+const campaign = await ns.campaigns.create({ name: 'March Sale', channel: 'email' });
 await ns.campaigns.send(campaign.id);
 
 // Send a transactional message (receipt, OTP, reset — no campaign needed)
