@@ -860,7 +860,7 @@ export interface CreateImport {
   signedId: string;
   resource?: 'contacts';
   parser?: 'default';
-  columns?: Record<string, string> | string;
+  columns?: Record<string, string | null> | string | null;
   options?: {
     listIds?: number[];
     [key: string]: unknown;
