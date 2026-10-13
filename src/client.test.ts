@@ -46,3 +46,23 @@ test('every request names the SDK with a versioned User-Agent', async () => {
   }
   assert.equal(seen[1].get('idempotency-key'), 'receipt-1');
 });
+
+test('contact requests distinguish omitted consent from explicit true, false and null', async () => {
+  const bodies: unknown[] = [];
+  globalThis.fetch = async (_input, init) => {
+    bodies.push(JSON.parse(init?.body as string));
+    return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const ns = new Nitrosend({ apiKey: 'nskey_test_abc123' });
+
+  await ns.contacts.create({ email: 'alice@example.com' });
+  for (const optIn of [true, false, null]) {
+    await ns.contacts.update(123, { email: 'alice@example.com', optIn });
+  }
+  assert.deepEqual(bodies, [
+    { email: 'alice@example.com' },
+    { email: 'alice@example.com', opt_in: true },
+    { email: 'alice@example.com', opt_in: false },
+    { email: 'alice@example.com', opt_in: null },
+  ]);
+});

@@ -714,6 +714,8 @@ export interface CreateContact {
   listIds?: number[];
   email?: string;
   phone?: string;
+  /** Omit to preserve existing consent. True opts in; false opts out. Suppression still applies. */
+  optIn?: boolean | null;
   data?: Record<string, unknown>;
 }
 
