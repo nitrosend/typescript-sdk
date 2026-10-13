@@ -448,8 +448,9 @@ export interface Message {
 export interface Suppression {
   id: number;
   email: string;
-  reason: 'hard_bounce' | 'soft_bounce' | 'complaint' | 'manual' | 'admin';
-  scope: 'account_scoped';
+  reason: 'hard_bounce' | 'soft_bounce' | 'complaint' | 'manual' | 'admin' | 'unsubscribe' | 'verification' | 'marketing_withheld';
+  scope: 'account_scoped' | 'brand_scoped';
+  brandId: number | null;
   active: boolean;
   contactId: number | null;
   sourceProvider: string | null;
