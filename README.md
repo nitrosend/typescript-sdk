@@ -252,6 +252,17 @@ const ns = new Nitrosend({
 });
 ```
 
+`timeout` applies to each HTTP attempt, including reading and decoding its
+response body. Expiry aborts that attempt and raises `NitrosendError` with code
+`TIMEOUT`, without retrying. A 204 response has no JSON body to consume. Timers
+depend on the event loop and cannot interrupt synchronous JSON parsing.
+
+Retryable failures can make up to three attempts, with 100 ms and 300 ms waits
+outside the per-attempt timeout. Total call duration can therefore exceed
+`timeout`. A timeout does not prove that the server performed no action. Retain
+the original message's idempotency key and payload, and reconcile original state
+through an available readback before deciding whether to retry that operation.
+
 ## License
 
 MIT
