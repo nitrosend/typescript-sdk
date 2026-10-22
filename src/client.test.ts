@@ -27,6 +27,26 @@ test('the generated version matches package.json', () => {
   assert.equal(VERSION, PACKAGE_VERSION);
 });
 
+test('hosted renames send the current hostname precondition and expose the updated brand', async () => {
+  let requestBody: unknown;
+  let requestUrl: string | undefined;
+  globalThis.fetch = async (input, init) => {
+    requestUrl = String(input);
+    requestBody = JSON.parse(init?.body as string);
+    return new Response(JSON.stringify({ id: 1, sid: 'brand_1', email_from_email: 'hello@new-name.nitrosend.net',
+      brand_subdomain: { fqdn: 'new-name.nitrosend.net', fqdn_changeable: true } }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const ns = new Nitrosend({ apiKey: 'nskey_test_abc123' });
+  const brand = await ns.brands.renameHostedSender('brand_1', {
+    subdomain: 'new-name', expectedFqdn: 'old-name.nitrosend.net',
+  });
+  assert.ok(requestUrl?.endsWith('/v1/my/brands/brand_1/rename_hosted_sender'));
+  assert.deepEqual(requestBody, { subdomain: 'new-name', expected_fqdn: 'old-name.nitrosend.net' });
+  assert.equal(brand.emailFromEmail, 'hello@new-name.nitrosend.net');
+  assert.equal(brand.brandSubdomain?.fqdnChangeable, true);
+});
+
 test('every request names the SDK with a versioned User-Agent', async () => {
   const seen = captureHeaders();
   const ns = new Nitrosend({ apiKey: 'nskey_test_abc123', brandSid: 'brand_1' });

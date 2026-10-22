@@ -167,7 +167,7 @@ export interface BrandSubdomain {
   apex?: string;
   localPart?: string;
   localPartEditable?: boolean;
-  fqdnChangeable: false;
+  fqdnChangeable: boolean;
   /** Company-derived candidate offered while the brand has no namespace; absent once reserved. */
   suggestedSubdomain?: string;
 }
@@ -177,6 +177,12 @@ export interface PrepareBrandSubdomainRequest {
   subdomain?: string;
   /** Sender local part (defaults to `hello`). */
   localPart?: string;
+}
+
+export interface RenameHostedSenderRequest {
+  subdomain: string;
+  /** Current brandSubdomain.fqdn; prevents a stale request replacing another change. */
+  expectedFqdn: string;
 }
 
 export interface BrandSubdomainPreparationResponse {

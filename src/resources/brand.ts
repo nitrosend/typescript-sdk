@@ -5,6 +5,7 @@ import type {
   CreateBrand,
   HostedSenderAvailability,
   PrepareBrandSubdomainRequest,
+  RenameHostedSenderRequest,
   UpdateBrand,
 } from '../types.js';
 
@@ -49,6 +50,13 @@ export class BrandResource {
       `${this.path}/${sid}/prepare_sending`,
       params ? { body: params as Record<string, unknown> } : undefined,
     );
+    return data;
+  }
+
+  async renameHostedSender(sid: string, params: RenameHostedSenderRequest): Promise<Brand> {
+    const { data } = await this.client.request<Brand>('POST', `${this.path}/${sid}/rename_hosted_sender`, {
+      body: { ...params },
+    });
     return data;
   }
 
