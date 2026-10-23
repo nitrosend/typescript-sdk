@@ -17,6 +17,14 @@ export class Domains extends Resource<Domain, CreateDomain, never> {
     return data;
   }
 
+  /** Read receiving status for one exact inbox when a domain has several. */
+  override async get(id: number | string, options?: { inboxId?: number }): Promise<Domain> {
+    const { data } = await this.client.request<Domain>('GET', `${this.path}/${id}`, {
+      query: options?.inboxId == null ? undefined : { inbox_id: options.inboxId },
+    });
+    return data;
+  }
+
   async verify(id: number): Promise<Domain> {
     const { data } = await this.client.request<Domain>('POST', `${this.path}/${id}/verify`);
     return data;

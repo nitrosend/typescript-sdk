@@ -107,6 +107,22 @@ test('every request names the SDK with a versioned User-Agent', async () => {
   assert.equal(seen[1].get('idempotency-key'), 'receipt-1');
 });
 
+test('domain receiving status requests the selected inbox and preserves its identity', async () => {
+  let requestUrl: string | undefined;
+  globalThis.fetch = async (input) => {
+    requestUrl = String(input);
+    return new Response(JSON.stringify({ id: 41, inbound_setup: {
+      method: 'provider_forwarding', status: 'pending', requires_inbox_selection: false,
+      inbox: { id: 10, address: 'scout@example.com', status: 'active' },
+    } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const ns = new Nitrosend('nskey_test_abc123');
+  const domain = await ns.domains.get(41, { inboxId: 10 });
+  assert.equal(new URL(requestUrl!).searchParams.get('inbox_id'), '10');
+  assert.equal(domain.inboundSetup?.inbox?.id, 10);
+  assert.equal(domain.inboundSetup?.requiresInboxSelection, false);
+});
+
 test('contact requests distinguish omitted consent from explicit true, false and null', async () => {
   const bodies: unknown[] = [];
   globalThis.fetch = async (_input, init) => {

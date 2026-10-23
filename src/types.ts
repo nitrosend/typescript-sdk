@@ -386,6 +386,18 @@ export interface Domain {
   defaultFromDomain?: string;
   senderAuthorizationReason?: SenderAuthorizationReason;
   dnsSetupStatus?: 'unchecked' | 'incomplete' | 'ready' | 'verified';
+  inboundSetup?: {
+    method: 'none' | 'provider_forwarding' | 'mx';
+    status: 'not_configured' | 'pending' | 'active' | 'attention';
+    requiresInboxSelection?: boolean;
+    inbox?: { id: number; address: string; displayName?: string | null; status: string } | null;
+    providerForwarding?: {
+      provider: string;
+      forwardingAddress: string;
+      probeSentAt?: string | null;
+      verifiedAt?: string | null;
+    } | null;
+  };
   dnsRecords: Record<string, unknown>[] | null;
   verifiedAt: string | null;
   createdAt: string;
@@ -558,15 +570,24 @@ export interface WebhookEvent {
     truncated?: boolean;
     /** email.received: true for automatic replies such as out-of-office notices. */
     auto_submitted?: boolean;
-    /** email.received: fetch the bytes through the conversations API. */
+    /** email.received: recorded files, including unavailable ones. Check downloadable before fetching. */
     attachments?: {
       id: number;
       filename: string;
       content_type: string;
       size: number;
-      /** False when no virus scan covered the file; download it with `acknowledge_unscanned=true`. */
+      /** True only for a clean scan verdict; this does not prove the bytes are stored. */
       scanned: boolean;
+      /** Optional for deliveries queued before attachment availability was added. */
+      scan_status?: 'pending' | 'clean' | 'infected' | 'failed' | 'not_scanned';
+      downloadable?: boolean;
+      /** Fetch with `acknowledge_unscanned=true` only when this is true. */
+      download_requires_confirmation?: boolean;
+      /** Present when unavailable; unknown reasons must also be treated as unavailable. */
+      availability_reason?: string;
     }[];
+    /** email.received: files omitted from the list by attachment limits; absent when none were omitted. */
+    attachments_omitted?: number;
     /** email.received; null on test events. */
     conversation_id?: number | null;
     /** email.received; null on test events. */
