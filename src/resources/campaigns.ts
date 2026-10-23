@@ -11,9 +11,9 @@ export class Campaigns extends Resource<Campaign, CreateCampaign, UpdateCampaign
     return super.list(params as Record<string, unknown>) as Promise<PaginatedResponse<Campaign>>;
   }
 
-  async send(id: number, params?: SendCampaign): Promise<Campaign> {
+  async send(id: number, params: SendCampaign): Promise<Campaign> {
     const { data } = await this.client.request<Campaign>('POST', `${this.path}/${id}/send`, {
-      body: params as Record<string, unknown>,
+      body: { ...params },
     });
     return data;
   }

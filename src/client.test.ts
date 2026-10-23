@@ -47,6 +47,47 @@ test('hosted renames send the current hostname precondition and expose the updat
   assert.equal(brand.brandSubdomain?.fqdnChangeable, true);
 });
 
+test('campaign template attributes go out in snake_case, with the design left as written', async () => {
+  let requestBody: unknown;
+  globalThis.fetch = async (_input, init) => {
+    requestBody = JSON.parse(init?.body as string);
+    return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const ns = new Nitrosend({ apiKey: 'nskey_test_abc123' });
+
+  await ns.campaigns.update(14834, {
+    templateAttributes: { id: 23507, ifVersion: 1, fromName: 'Ada', design: { sections: [{ blockType: 'text' }] } },
+  });
+
+  assert.deepEqual(requestBody, {
+    template_attributes: { id: 23507, if_version: 1, from_name: 'Ada', design: { sections: [{ blockType: 'text' }] } },
+  });
+});
+
+test('a campaign send carries the draft preconditions the endpoint requires', async () => {
+  let requestBody: unknown;
+  let requestUrl: string | undefined;
+  globalThis.fetch = async (input, init) => {
+    requestUrl = String(input);
+    requestBody = JSON.parse(init?.body as string);
+    return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const ns = new Nitrosend({ apiKey: 'nskey_test_abc123' });
+
+  await ns.campaigns.send(14931, {
+    expectedCampaignUpdatedAt: '2026-10-22T11:23:58.123456Z',
+    templateIfVersion: 3,
+    deliverAt: '2026-10-22T12:00:00Z',
+  });
+
+  assert.ok(requestUrl?.endsWith('/v1/my/campaigns/14931/send'));
+  assert.deepEqual(requestBody, {
+    expected_campaign_updated_at: '2026-10-22T11:23:58.123456Z',
+    template_if_version: 3,
+    deliver_at: '2026-10-22T12:00:00Z',
+  });
+});
+
 test('every request names the SDK with a versioned User-Agent', async () => {
   const seen = captureHeaders();
   const ns = new Nitrosend({ apiKey: 'nskey_test_abc123', brandSid: 'brand_1' });

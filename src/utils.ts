@@ -3,7 +3,7 @@ const PASS_THROUGH = new Set([
   'data', 'design', 'variables', 'filters', 'sections', 'theme',
   'steps', 'trigger', 'columns', 'links', 'dns_records', 'onboarding_state',
   'audience', 'params', 'default_header', 'default_footer', 'default_theme',
-  'example_copy', 'trigger_attributes', 'template_attributes', 'capabilities',
+  'example_copy', 'trigger_attributes', 'capabilities',
   'onboarding', 'headers', 'tags',
 ]);
 

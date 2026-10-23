@@ -297,6 +297,8 @@ export interface Template {
   name: string | null;
   flowId: number | null;
   actionId: number | null;
+  /** The persisted version: pass it back as an update's ifVersion or a send's templateIfVersion. */
+  version: number;
   subject: string | null;
   body: string | null;
   preheader: string | null;
@@ -745,10 +747,17 @@ export interface UpdateCampaign {
   templateAttributes?: Record<string, unknown>;
 }
 
+/**
+ * A send names the exact draft it approves, so a stale caller cannot send a
+ * newer one: the campaign's updatedAt and its template's version, as read.
+ */
 export interface SendCampaign {
+  expectedCampaignUpdatedAt: string;
+  templateIfVersion: number;
+  /** Future delivery time (RFC 3339); omit to send now. */
+  deliverAt?: string;
+  /** Required when the persisted audience is all_contacts. */
   confirmSendToAll?: boolean;
-  triggerAttributes?: CampaignTriggerAttributes;
-  templateAttributes?: Record<string, unknown>;
 }
 
 export interface CreateFlow {

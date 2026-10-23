@@ -90,9 +90,13 @@ await ns.events.create({
   data: { orderId: 123, total: 49.99 },
 });
 
-// Send a campaign
-const campaign = await ns.campaigns.create({ name: 'March Sale', channel: 'email' });
-await ns.campaigns.send(campaign.id);
+// Send a campaign once its content and audience are set, naming the exact
+// draft you read so a newer one is never sent by mistake
+const campaign = await ns.campaigns.get(123);
+await ns.campaigns.send(campaign.id, {
+  expectedCampaignUpdatedAt: campaign.updatedAt,
+  templateIfVersion: campaign.template.version,
+});
 
 // Send a transactional message (receipt, OTP, reset: no campaign needed)
 const msg = await ns.messages.send({
