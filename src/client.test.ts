@@ -2,6 +2,8 @@ import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Nitrosend, VERSION } from './index.js';
+import * as sdk from './index.js';
+import { registerSuite } from '../test/helpers/http-suite.mjs';
 
 const PACKAGE_VERSION: string = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
@@ -175,3 +177,5 @@ test('a retried send carries the same idempotency key', async () => {
   assert.equal(message.id, 9);
   assert.deepEqual(keys, ['receipt-9', 'receipt-9']);
 });
+
+registerSuite(sdk, 'source', true);

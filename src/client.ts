@@ -71,31 +71,27 @@ export class NitrosendClient {
           signal: controller.signal,
         });
 
-        clearTimeout(timer);
-
         if (response.status >= 500 && attempt < RETRY_DELAYS.length) {
           lastError = new Error(`Server error ${response.status}`);
-          await sleep(RETRY_DELAYS[attempt]);
-          continue;
+          // Discard this body without waiting for a possibly unfinished stream.
+          controller.abort();
+        } else {
+          if (response.status === 204) {
+            return { data: undefined as T, headers: response.headers };
+          }
+
+          const rawBody: unknown = await response.json();
+
+          if (!response.ok) {
+            throw NitrosendError.fromResponse(response.status, rawBody);
+          }
+
+          return {
+            data: toCamelBody(rawBody) as T,
+            headers: response.headers,
+          };
         }
-
-        if (response.status === 204) {
-          return { data: undefined as T, headers: response.headers };
-        }
-
-        const rawBody: unknown = await response.json();
-
-        if (!response.ok) {
-          throw NitrosendError.fromResponse(response.status, rawBody);
-        }
-
-        return {
-          data: toCamelBody(rawBody) as T,
-          headers: response.headers,
-        };
       } catch (error) {
-        clearTimeout(timer);
-
         if (error instanceof NitrosendError) throw error;
 
         if (error instanceof DOMException && error.name === 'AbortError') {
@@ -103,11 +99,12 @@ export class NitrosendClient {
         }
 
         lastError = error as Error;
+      } finally {
+        clearTimeout(timer);
+      }
 
-        if (attempt < RETRY_DELAYS.length) {
-          await sleep(RETRY_DELAYS[attempt]);
-          continue;
-        }
+      if (attempt < RETRY_DELAYS.length) {
+        await sleep(RETRY_DELAYS[attempt]);
       }
     }
 
