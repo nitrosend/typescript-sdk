@@ -196,3 +196,22 @@ test('a retried send carries the same idempotency key', async () => {
   assert.equal(message.id, 9);
   assert.deepEqual(keys, ['receipt-9', 'receipt-9']);
 });
+
+
+test('subdomain sharing preserves the owner route, nested request and recipient scope', async () => {
+  const seen: { url: string; method?: string; body: unknown }[] = [];
+  globalThis.fetch = async (input, init) => {
+    seen.push({ url: String(input), method: init?.method, body: init?.body ? JSON.parse(String(init.body)) : null });
+    return new Response(JSON.stringify({ id: 8, sending_domain_id: 8, brand_sid: 'recipient', active: init?.method !== 'DELETE' }), { status: 200 });
+  };
+  const ns = new Nitrosend({ apiKey: 'nskey_test_abc123' });
+  await ns.domains.sharedSubdomains(4, { q: 'client', page: 2 });
+  const child = await ns.domains.shareSubdomain(4, { subdomain: 'scout', brandSid: 'recipient' });
+  assert.equal(child.brandSid, 'recipient');
+  assert.equal(child.sendingDomainId, 8);
+  assert.ok(seen[0].url.endsWith('/v1/my/domains/4/subdomains?q=client&page=2'));
+  assert.deepEqual(seen[1].body, { subdomain: { subdomain: 'scout', brand_sid: 'recipient' } });
+  assert.equal((await ns.domains.stopSharingSubdomain(4, 8)).active, false);
+  assert.equal(seen[2].method, 'DELETE');
+  assert.ok(seen[2].url.endsWith('/v1/my/domains/4/subdomains/8'));
+});

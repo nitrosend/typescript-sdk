@@ -383,6 +383,10 @@ export interface Domain {
   name: string;
   provider: string;
   status: 'pending' | 'verified';
+  subdomainSharingAvailable?: boolean;
+  sharedSubdomain?: { active: boolean; parentDomain: string | null; message: string | null };
+  outstanding?: { code: 'dns_records' | 'provider_confirmation' | 'domain_review' | 'domain_permission';
+    actionRequired: boolean; items: { domain: string; check: string }[]; message: string; nextCheckAt: string | null } | null;
   defaultFromDomain?: string;
   senderAuthorizationReason?: SenderAuthorizationReason;
   dnsSetupStatus?: 'unchecked' | 'incomplete' | 'ready' | 'verified';
@@ -401,6 +405,29 @@ export interface Domain {
   dnsRecords: Record<string, unknown>[] | null;
   verifiedAt: string | null;
   createdAt: string;
+}
+
+export interface SharedSubdomain {
+  id: number;
+  name: string;
+  sendingDomainId: number;
+  sendingDomainName: string;
+  accountId: number;
+  accountName: string;
+  brandId: number;
+  brandSid: string;
+  brandName: string;
+  active: boolean;
+  revokedAt: string | null;
+  dnsVerified: boolean;
+}
+
+export interface SubdomainSharingSummary {
+  parent: { id: number; name: string };
+  destinations: { accountId: number; accountName: string; brandId: number; brandSid: string; brandName: string }[];
+  destinationsTruncated: boolean;
+  subdomains: SharedSubdomain[];
+  pagination: { page: number; totalPages: number; totalCount: number };
 }
 
 export interface Inbox {

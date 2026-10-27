@@ -1,5 +1,5 @@
 import { Resource } from '../resource.js';
-import type { Domain, CreateDomain, DomainListParams } from '../types.js';
+import type { Domain, CreateDomain, DomainListParams, SharedSubdomain, SubdomainSharingSummary } from '../types.js';
 import type { PaginatedResponse } from '../pagination.js';
 
 export class Domains extends Resource<Domain, CreateDomain, never> {
@@ -27,6 +27,26 @@ export class Domains extends Resource<Domain, CreateDomain, never> {
 
   async verify(id: number): Promise<Domain> {
     const { data } = await this.client.request<Domain>('POST', `${this.path}/${id}/verify`);
+    return data;
+  }
+
+  /** Owner-only listing. Brand-pinned keys do not receive a destination directory. */
+  async sharedSubdomains(id: number, params?: { q?: string; page?: number }): Promise<SubdomainSharingSummary> {
+    const { data } = await this.client.request<SubdomainSharingSummary>('GET', `${this.path}/${id}/subdomains`, { query: params });
+    return data;
+  }
+
+  /** Share one DNS label with an exact eligible brand; finish DNS in that brand. */
+  async shareSubdomain(id: number, params: { subdomain: string; brandSid: string }): Promise<SharedSubdomain> {
+    const { data } = await this.client.request<SharedSubdomain>('POST', `${this.path}/${id}/subdomains`, {
+      body: { subdomain: params },
+    });
+    return data;
+  }
+
+  /** Stop subsequent sending and receiving; retain existing mail. */
+  async stopSharingSubdomain(id: number, sharedId: number): Promise<SharedSubdomain> {
+    const { data } = await this.client.request<SharedSubdomain>('DELETE', `${this.path}/${id}/subdomains/${sharedId}`);
     return data;
   }
 
