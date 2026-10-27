@@ -403,6 +403,71 @@ export interface Domain {
   createdAt: string;
 }
 
+export interface Inbox {
+  id: number;
+  accountId: number;
+  brandId: number;
+  domainId: number;
+  address: string;
+  localPart: string;
+  displayName: string | null;
+  status: 'active' | 'disabled' | 'archived';
+  replyAvailable: boolean;
+  hosted: boolean;
+  senderAddressEditable: boolean;
+  sendingAddresses: string[];
+  storage: Record<string, unknown>;
+  retention: { days?: number };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InboxCreate {
+  domainId: number;
+  localPart: string;
+  displayName?: string | null;
+  forwardingProvider?: 'google_workspace' | 'microsoft_365' | 'zoho' | 'other';
+}
+
+export interface InboxUpdate {
+  displayName?: string | null;
+  status?: 'active' | 'archived';
+}
+
+export interface InboxCapacity {
+  inboxes: {
+    used: number;
+    included: number | null;
+    grandfathered: number;
+    purchased: number;
+    limit: number | null;
+    creationLimit: number | null;
+    remaining: number | null;
+    overLimit: boolean;
+  };
+  domains: { used: number; limit: number | null; remaining: number | null; unlimited: boolean; canAdd: boolean };
+  availableDomains: { id: number; name: string; receivingMethod: string; hosted: boolean }[];
+  forwardingProviders: { key: string; label: string; guidance: string }[];
+  offer: {
+    planId: number;
+    quantity: number;
+    unitAmountCents: number;
+    recurringTotalCents: number;
+    currency: string;
+    interval: string;
+    available: boolean;
+    manageUrl: string | null;
+  } | null;
+  subscription: {
+    quantity: number;
+    scheduledQuantity: number | null;
+    changeAt: string | null;
+    paidThroughAt: string | null;
+    active: boolean;
+    cancelAtPeriodEnd: boolean;
+  } | null;
+}
+
 export interface Event {
   id: number;
   event: string;

@@ -27,6 +27,27 @@ test('the generated version matches package.json', () => {
   assert.equal(VERSION, PACKAGE_VERSION);
 });
 
+test('inboxes keep the native API envelopes, server quote and retry identity', async () => {
+  const requests: { url: string; method?: string; body: unknown; key: string | null }[] = [];
+  globalThis.fetch = async (input, init) => {
+    requests.push({ url: String(input), method: init?.method, body: init?.body ? JSON.parse(String(init.body)) : null,
+      key: new Headers(init?.headers).get('Idempotency-Key') });
+    return new Response(JSON.stringify(String(input).includes('/capacity')
+      ? { offer: { quantity: 43, recurring_total_cents: 4300 } }
+      : { id: 1, reply_available: false, status: 'archived' }), { status: 200 });
+  };
+  const ns = new Nitrosend({ apiKey: 'nskey_test_abc123', brandSid: 'brand_1' });
+  await ns.inboxes.create({ domainId: 4, localPart: 'scout', displayName: 'Scout Alice' }, { idempotencyKey: 'new-scout' });
+  assert.deepEqual(requests[0].body, { inbox: { domain_id: 4, local_part: 'scout', display_name: 'Scout Alice' } });
+  assert.equal(requests[0].key, 'new-scout');
+  const archived = await ns.inboxes.update(1, { status: 'archived' });
+  assert.equal(archived.replyAvailable, false);
+  const quote = await ns.inboxes.capacity(43);
+  assert.equal(quote.offer?.recurringTotalCents, 4300);
+  assert.ok(requests[2].url.endsWith('/v1/my/inboxes/capacity?quantity=43'));
+  assert.equal('delete' in ns.inboxes, false);
+});
+
 test('hosted renames send the current hostname precondition and expose the updated brand', async () => {
   let requestBody: unknown;
   let requestUrl: string | undefined;
