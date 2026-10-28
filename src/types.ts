@@ -392,12 +392,116 @@ export interface Domain {
   name: string;
   provider: string;
   status: 'pending' | 'verified';
+  subdomainSharingAvailable?: boolean;
+  sharedSubdomain?: { active: boolean; parentDomain: string | null; message: string | null };
+  outstanding?: { code: 'dns_records' | 'provider_confirmation' | 'domain_review' | 'domain_permission';
+    actionRequired: boolean; items: { domain: string; check: string }[]; message: string; nextCheckAt: string | null } | null;
   defaultFromDomain?: string;
   senderAuthorizationReason?: SenderAuthorizationReason;
   dnsSetupStatus?: 'unchecked' | 'incomplete' | 'ready' | 'verified';
+  inboundSetup?: {
+    method: 'none' | 'provider_forwarding' | 'mx';
+    status: 'not_configured' | 'pending' | 'active' | 'attention';
+    requiresInboxSelection?: boolean;
+    inbox?: { id: number; address: string; displayName?: string | null; status: string } | null;
+    providerForwarding?: {
+      provider: string;
+      forwardingAddress: string;
+      probeSentAt?: string | null;
+      verifiedAt?: string | null;
+    } | null;
+  };
   dnsRecords: Record<string, unknown>[] | null;
   verifiedAt: string | null;
   createdAt: string;
+}
+
+export interface SharedSubdomain {
+  id: number;
+  name: string;
+  sendingDomainId: number;
+  sendingDomainName: string;
+  accountId: number;
+  accountName: string;
+  brandId: number;
+  brandSid: string;
+  brandName: string;
+  active: boolean;
+  revokedAt: string | null;
+  dnsVerified: boolean;
+}
+
+export interface SubdomainSharingSummary {
+  parent: { id: number; name: string };
+  destinations: { accountId: number; accountName: string; brandId: number; brandSid: string; brandName: string }[];
+  destinationsTruncated: boolean;
+  subdomains: SharedSubdomain[];
+  pagination: { page: number; totalPages: number; totalCount: number };
+}
+
+export interface Inbox {
+  id: number;
+  accountId: number;
+  brandId: number;
+  domainId: number;
+  address: string;
+  localPart: string;
+  displayName: string | null;
+  status: 'active' | 'disabled' | 'archived';
+  replyAvailable: boolean;
+  hosted: boolean;
+  senderAddressEditable: boolean;
+  sendingAddresses: string[];
+  storage: Record<string, unknown>;
+  retention: { days?: number };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InboxCreate {
+  domainId: number;
+  localPart: string;
+  displayName?: string | null;
+  forwardingProvider?: 'google_workspace' | 'microsoft_365' | 'zoho' | 'other';
+}
+
+export interface InboxUpdate {
+  displayName?: string | null;
+  status?: 'active' | 'archived';
+}
+
+export interface InboxCapacity {
+  inboxes: {
+    used: number;
+    included: number | null;
+    grandfathered: number;
+    purchased: number;
+    limit: number | null;
+    creationLimit: number | null;
+    remaining: number | null;
+    overLimit: boolean;
+  };
+  domains: { used: number; limit: number | null; remaining: number | null; unlimited: boolean; canAdd: boolean };
+  availableDomains: { id: number; name: string; receivingMethod: string; hosted: boolean }[];
+  forwardingProviders: { key: string; label: string; guidance: string }[];
+  offer: {
+    planId: number;
+    quantity: number;
+    unitAmountCents: number;
+    recurringTotalCents: number;
+    currency: string;
+    interval: string;
+    available: boolean;
+    manageUrl: string | null;
+  } | null;
+  subscription: {
+    quantity: number;
+    scheduledQuantity: number | null;
+    changeAt: string | null;
+    paidThroughAt: string | null;
+    active: boolean;
+    cancelAtPeriodEnd: boolean;
+  } | null;
 }
 
 export interface Event {
@@ -449,6 +553,8 @@ export interface Message {
   subject: string | null;
   status: 'queued' | 'sent' | 'failed';
   providerId: string | null;
+  /** Actual email Message-ID after provider acceptance; null until available. */
+  rfcMessageId: string | null;
   flowId: number | null;
   sourceType: 'campaign' | 'flow' | 'test' | null;
   sourceName: string | null;
@@ -567,15 +673,24 @@ export interface WebhookEvent {
     truncated?: boolean;
     /** email.received: true for automatic replies such as out-of-office notices. */
     auto_submitted?: boolean;
-    /** email.received: fetch the bytes through the conversations API. */
+    /** email.received: recorded files, including unavailable ones. Check downloadable before fetching. */
     attachments?: {
       id: number;
       filename: string;
       content_type: string;
       size: number;
-      /** False when no virus scan covered the file; download it with `acknowledge_unscanned=true`. */
+      /** True only for a clean scan verdict; this does not prove the bytes are stored. */
       scanned: boolean;
+      /** Optional for deliveries queued before attachment availability was added. */
+      scan_status?: 'pending' | 'clean' | 'infected' | 'failed' | 'not_scanned';
+      downloadable?: boolean;
+      /** Fetch with `acknowledge_unscanned=true` only when this is true. */
+      download_requires_confirmation?: boolean;
+      /** Present when unavailable; unknown reasons must also be treated as unavailable. */
+      availability_reason?: string;
     }[];
+    /** email.received: files omitted from the list by attachment limits; absent when none were omitted. */
+    attachments_omitted?: number;
     /** email.received; null on test events. */
     conversation_id?: number | null;
     /** email.received; null on test events. */
