@@ -2,7 +2,7 @@
 // Response types (from API serializer schemas)
 // =============================================================================
 
-export type CommercialTier = 'unsubscribed' | 'free' | 'pro' | 'ultra' | 'enterprise';
+export type CommercialTier = 'unsubscribed' | 'free' | 'starter' | 'pro' | 'growth' | 'scale' | 'ultra' | 'enterprise';
 
 export interface AccountAccess {
   source: 'owner' | 'membership' | 'platform_admin' | 'delegated' | 'management_credential' | 'api_key' | 'shopify';
@@ -22,6 +22,14 @@ export interface AccountBrandAllowance {
   canCreate: boolean;
 }
 
+export interface AccountDomainAllowance {
+  used: number;
+  limit: number | null;
+  remaining: number | null;
+  unlimited: boolean;
+  canAdd: boolean;
+}
+
 export interface AccountResourceUsage {
   used: number;
   allowance: number | null;
@@ -35,6 +43,7 @@ export interface AccountResourceUsage {
 export interface AccountBilling {
   accessPolicy: 'free_allowed' | 'paid_required' | null;
   brands: AccountBrandAllowance;
+  domains?: AccountDomainAllowance;
   funding: Record<string, unknown>;
   providerRoute: Record<string, unknown>;
   planName?: string | null;
