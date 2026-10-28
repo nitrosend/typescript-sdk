@@ -184,7 +184,7 @@ test('a retried send carries the same idempotency key', async () => {
   globalThis.fetch = async (_input, init) => {
     keys.push(new Headers(init?.headers).get('idempotency-key'));
     const status = keys.length === 1 ? 502 : 201;
-    return new Response(JSON.stringify({ id: 9, status: 'queued' }), { status, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ id: 9, status: 'sent', rfc_message_id: 'wire@example.com' }), { status, headers: { 'Content-Type': 'application/json' } });
   };
   const ns = new Nitrosend('nskey_test_abc123');
 
@@ -194,6 +194,7 @@ test('a retried send carries the same idempotency key', async () => {
   );
 
   assert.equal(message.id, 9);
+  assert.equal(message.rfcMessageId, 'wire@example.com');
   assert.deepEqual(keys, ['receipt-9', 'receipt-9']);
 });
 

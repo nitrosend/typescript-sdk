@@ -544,6 +544,8 @@ export interface Message {
   subject: string | null;
   status: 'queued' | 'sent' | 'failed';
   providerId: string | null;
+  /** Actual email Message-ID after provider acceptance; null until available. */
+  rfcMessageId: string | null;
   flowId: number | null;
   sourceType: 'campaign' | 'flow' | 'test' | null;
   sourceName: string | null;
