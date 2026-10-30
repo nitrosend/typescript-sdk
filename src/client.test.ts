@@ -46,6 +46,8 @@ test('inboxes keep the native API envelopes, server quote and retry identity', a
   assert.equal(quote.offer?.recurringTotalCents, 4300);
   assert.ok(requests[2].url.endsWith('/v1/my/inboxes/capacity?quantity=43'));
   assert.equal('delete' in ns.inboxes, false);
+  await ns.inboxes.update(1, { coexistenceEnabled: false });
+  assert.deepEqual(requests[3].body, { inbox: { coexistence_enabled: false } });
 });
 
 test('hosted renames send the current hostname precondition and expose the updated brand', async () => {

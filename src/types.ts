@@ -454,6 +454,7 @@ export interface Inbox {
   sendingAddresses: string[];
   storage: Record<string, unknown>;
   retention: { days?: number };
+  coexistence?: { available: boolean; selected: boolean; enabled: boolean; included: boolean; capacity: number };
   createdAt: string;
   updatedAt: string;
 }
@@ -468,6 +469,8 @@ export interface InboxCreate {
 export interface InboxUpdate {
   displayName?: string | null;
   status?: 'active' | 'archived';
+  /** Onward copy to the existing provider, only for a verified Nitrosend MX setup. */
+  coexistenceEnabled?: boolean;
 }
 
 export interface InboxCapacity {
