@@ -2,4 +2,4 @@
 // Source: package.json
 // Regenerate with: npm run build
 
-export const VERSION = "0.11.14";
+export const VERSION = "0.11.15";
