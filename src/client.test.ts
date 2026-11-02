@@ -10,6 +10,26 @@ const USER_AGENT = `nitrosend-sdk/${PACKAGE_VERSION}`;
 
 const originalFetch = globalThis.fetch;
 
+test('commerce graphs and preview event data keep their exact source keys', async () => {
+  const bodies: unknown[] = [];
+  globalThis.fetch = async (_input, init) => {
+    bodies.push(JSON.parse(init?.body as string));
+    return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const ns = new Nitrosend({ apiKey: 'nskey_test_commerce' });
+  const eventData = { currency: 'EUR', items: [{ product_name: 'Kip', product_url: 'https://shop.example/item', originalSKU: 'ABC' }] };
+  await ns.templates.sendTest(12, { email: 'owner@example.com', eventData, idempotencyKey: 'same-test' });
+  await ns.templates.preview({ document: { sections: [] }, eventData });
+  const trigger = { event: 'cart_add', exit_events: ['purchase'] };
+  const steps = [{ type: 'wait', duration: 0, send_at: '09:00', time_zone: 'Europe/Amsterdam' }];
+  await ns.flows.create({ trigger, steps });
+  assert.deepEqual(bodies, [
+    { email: 'owner@example.com', event_data: eventData },
+    { document: { sections: [] }, event_data: eventData },
+    { trigger, steps },
+  ]);
+});
+
 afterEach(() => {
   globalThis.fetch = originalFetch;
 });

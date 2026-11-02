@@ -1,6 +1,6 @@
 /** Keys whose values are JSONB blobs — skip recursive key conversion. */
 const PASS_THROUGH = new Set([
-  'data', 'design', 'variables', 'filters', 'sections', 'theme',
+  'data', 'event_data', 'design', 'variables', 'filters', 'sections', 'theme',
   'steps', 'trigger', 'columns', 'links', 'dns_records', 'onboarding_state',
   'audience', 'params', 'default_header', 'default_footer', 'default_theme',
   'example_copy', 'trigger_attributes', 'capabilities',

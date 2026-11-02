@@ -896,6 +896,36 @@ export interface CreateFlow {
   idempotencyKey?: string;
 }
 
+/** Authored flow fields use snake_case within the graph. Existing custom fields remain supported. */
+export interface FlowEventTriggerInput extends Record<string, unknown> {
+  event: string;
+  exit_events?: string[];
+}
+
+export interface FlowWaitStepInput extends Record<string, unknown> {
+  type: 'wait';
+  /** Original not-before delay; zero is allowed when send_at is set. */
+  duration: number;
+  send_at?: string;
+  /** IANA zone pinned on approval; defaults from the account when omitted. */
+  time_zone?: string;
+}
+
+export type ProductBinding =
+  | { path: `event.${string}`; index?: number }
+  | { path: `event.${string}`; limit: number };
+
+export type EventProductSection = ({
+  type: 'product';
+  binding: { path: `event.${string}`; index?: number };
+} | {
+  type: 'products' | 'gallery';
+  binding: { path: `event.${string}`; limit: number };
+}) & {
+  props?: Record<string, unknown>;
+  styles?: Record<string, unknown>;
+}
+
 export type UpdateFlow = Omit<CreateFlow, 'idempotencyKey'>;
 
 export interface UpdateTemplate {
@@ -915,6 +945,8 @@ export interface UpdateTemplate {
  * domains, plus up to 10 other addresses per 30 days.
  */
 export interface SendTestParams {
+  /** Original trigger data for event fields and bound product sections; does not record an Event. */
+  eventData?: Record<string, unknown>;
   email?: string | string[];
   /** Sends to this contact, personalized with their data. */
   contactId?: number;
@@ -942,6 +974,7 @@ export interface SendTestResult {
 
 export interface PreviewParams {
   document: Record<string, unknown>;
+  eventData?: Record<string, unknown>;
 }
 
 export interface UpdateBrand extends CreateBrand {
@@ -958,7 +991,7 @@ export interface CreateEvent {
   contactEmail?: string;
   contactId?: number;
   idempotencyKey: string;
-  amount?: number;
+  amount?: number | string;
   resourceUid?: string;
   resourceName?: string;
   resourceUrl?: string;
