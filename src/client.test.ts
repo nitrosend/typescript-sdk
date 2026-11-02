@@ -182,6 +182,23 @@ test('domain receiving status requests the selected inbox and preserves its iden
   assert.equal(domain.inboundSetup?.requiresInboxSelection, false);
 });
 
+test('verify posts to verify and returns what is outstanding', async () => {
+  let request: { url: string; method?: string } | undefined;
+  globalThis.fetch = async (input, init) => {
+    request = { url: String(input), method: init?.method };
+    return new Response(JSON.stringify({ id: 41, status: 'pending', outstanding: {
+      code: 'provider_confirmation', action_required: false, items: [{ domain: 'send.example.com', check: 'verification' }],
+      message: 'Your DNS records are in place.', next_check_at: '2026-11-03T04:00:00Z',
+    } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const ns = new Nitrosend('nskey_test_abc123');
+  const domain = await ns.domains.verify(41);
+  assert.equal(request?.method, 'POST');
+  assert.ok(request?.url.endsWith('/v1/my/domains/41/verify'));
+  assert.equal(domain.outstanding?.code, 'provider_confirmation');
+  assert.equal(domain.outstanding?.nextCheckAt, '2026-11-03T04:00:00Z');
+});
+
 test('contact requests distinguish omitted consent from explicit true, false and null', async () => {
   const bodies: unknown[] = [];
   globalThis.fetch = async (_input, init) => {

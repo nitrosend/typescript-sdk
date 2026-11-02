@@ -125,7 +125,7 @@ used as the alternative when `html` is set (HTML in `body` is escaped).
 | `ns.flows` | `list`, `get`, `create`, `update`, `delete`, `spec` |
 | `ns.templates` | `list`, `get`, `update`, `sendTest`, `preview`, `spec` |
 | `ns.events` | `list`\*, `get`, `create`, `delete` |
-| `ns.domains` | `list`\*, `get`, `create`, `verify`, `delete` |
+| `ns.domains` | `list`\*, `get`, `create`, `verify`, `sharedSubdomains`, `shareSubdomain`, `stopSharingSubdomain`, `delete` |
 | `ns.brands` | `list`, `get`, `create`, `update`, `delete`, `scrape` |
 | `ns.segments` | `list`, `get`, `create`, `update`, `delete`, `count` |
 | `ns.lists` | `list`, `get`, `create`, `update`, `delete` |

@@ -25,6 +25,12 @@ export class Domains extends Resource<Domain, CreateDomain, never> {
     return data;
   }
 
+  /**
+   * Read the domain's DNS and name any record still missing; safe to repeat.
+   * Once its records are in place, Nitrosend verifies the domain on its own:
+   * `outstanding` says what remains and `nextCheckAt` when the next automatic
+   * check runs.
+   */
   async verify(id: number): Promise<Domain> {
     const { data } = await this.client.request<Domain>('POST', `${this.path}/${id}/verify`);
     return data;
