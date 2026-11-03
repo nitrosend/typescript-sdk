@@ -959,15 +959,24 @@ export interface SendTestParams {
 export interface SendTestRecipientResult {
   email: string;
   success: boolean;
-  status: 'delivered' | 'pending' | 'failed';
+  /** `delivered` is the legacy acceptance label; new sends return `sent`. Neither proves inbox placement. */
+  status: 'sent' | 'delivered' | 'pending' | 'failed';
   code: string;
+  /** Human-readable dispatch or provider-feedback detail. */
+  message?: string;
   /** Why this recipient's test was not sent. */
   error?: string;
   messageId?: number;
+  providerId?: string;
 }
 
 /** A refused recipient is reported in `results`; the others still get the test. */
 export interface SendTestResult {
+  /** Dispatch acceptance is separate from recipient delivery and inbox placement. */
+  outcome?: 'sent' | 'partial' | 'pending' | 'failed' | 'dry_run' | 'delivered';
+  dryRun?: boolean;
+  pending?: number;
+  failed?: number;
   sent: number;
   results: SendTestRecipientResult[];
 }
