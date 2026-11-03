@@ -150,6 +150,22 @@ test('every request names the SDK with a versioned User-Agent', async () => {
   assert.equal(seen[1].get('idempotency-key'), 'receipt-1');
 });
 
+test('transactional copies retain the exact envelope and retry key', async () => {
+  let body: unknown;
+  let key: string | null = null;
+  globalThis.fetch = async (_input, init) => {
+    body = JSON.parse(String(init?.body));
+    key = new Headers(init?.headers).get('Idempotency-Key');
+    return new Response('{}', { status: 200 });
+  };
+  const ns = new Nitrosend({ apiKey: 'nskey_test_abc123' });
+  const params = { channel: 'email' as const, to: 'owner@example.test', subject: 'Receipt', body: 'Thanks',
+    cc: ['stakeholder@example.test'], bcc: ['records@example.test'] };
+  await ns.messages.send(params, 'copied-receipt');
+  assert.deepEqual(body, params);
+  assert.equal(key, 'copied-receipt');
+});
+
 test('domain receiving status requests the selected inbox and preserves its identity', async () => {
   let requestUrl: string | undefined;
   globalThis.fetch = async (input) => {

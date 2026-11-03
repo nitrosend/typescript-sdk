@@ -553,6 +553,8 @@ export interface Message {
   brandId: number;
   channel: 'email' | 'sms';
   to: string;
+  /** Full normalized email envelope; returned only for email. */
+  recipients?: { to: string[]; cc: string[]; bcc: string[] };
   subject: string | null;
   status: 'queued' | 'sent' | 'failed';
   providerId: string | null;
@@ -1031,6 +1033,10 @@ export type UpdateList = CreateList;
 export interface CreateMessage {
   channel: 'email' | 'sms';
   to: string;
+  /** Email copies, up to 10 per list. Each distinct recipient consumes credit and sending allowance. */
+  cc?: string[];
+  /** Hidden email copies; never disclosed in the delivered message's headers. */
+  bcc?: string[];
   /** Email subject line; required for email unless `templateId` is set. */
   subject?: string;
   /**
