@@ -902,6 +902,34 @@ export interface CreateFlow {
 export interface FlowEventTriggerInput extends Record<string, unknown> {
   event: string;
   exit_events?: string[];
+  stop_on_reply?: boolean;
+  reply_source?: ReplySource;
+}
+
+export type ReplySource = { type: 'any' } | { type: 'flow' | 'campaign' | 'message'; id: number };
+
+export interface FlowReplyStepInput extends Record<string, unknown> {
+  type: 'reply';
+  action_name?: string;
+  body: string;
+  reply_all?: boolean;
+  cc?: string[];
+  bcc?: string[];
+}
+
+export interface ReplyCategory {
+  /** Stable snake_case output handle; other is reserved. */
+  key: string;
+  label: string;
+  description: string;
+}
+
+export interface FlowClassifyReplyStepInput extends Record<string, unknown> {
+  type: 'classify_reply';
+  action_name?: string;
+  categories: ReplyCategory[];
+  /** Includes every category key and other, even when its path is empty. */
+  branches: Record<string, Record<string, unknown>[]>;
 }
 
 export interface FlowWaitStepInput extends Record<string, unknown> {

@@ -10,6 +10,23 @@ const USER_AGENT = `nitrosend-sdk/${PACKAGE_VERSION}`;
 
 const originalFetch = globalThis.fetch;
 
+test('reply sources, categories and nested snake_case branch handles survive the transport unchanged', async () => {
+  let sent: unknown;
+  globalThis.fetch = async (_input, init) => {
+    sent = JSON.parse(init?.body as string);
+    return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const graph = {
+    trigger: { event: 'message', reply_source: { type: 'flow', id: 123 }, stop_on_reply: false },
+    steps: [{ type: 'classify_reply', categories: [
+      { key: 'needs_help', label: 'Needs help', description: 'Asks for support.' },
+      { key: 'interested', label: 'Interested', description: 'Wants details.' },
+    ], branches: { needs_help: [{ type: 'reply', body: 'Thanks {{ contact.first_name }}.', reply_all: true, cc: ['team@example.com'] }], interested: [], other: [] } }],
+  };
+  await new Nitrosend({ apiKey: 'nskey_local_test' }).flows.create(graph);
+  assert.deepEqual(sent, graph);
+});
+
 test('commerce graphs and preview event data keep their exact source keys', async () => {
   const bodies: unknown[] = [];
   globalThis.fetch = async (_input, init) => {
