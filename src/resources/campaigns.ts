@@ -1,5 +1,5 @@
 import { Resource } from '../resource.js';
-import type { Campaign, CreateCampaign, UpdateCampaign, SendCampaign, ListParams, SendTestParams, SendTestResult } from '../types.js';
+import type { Campaign, CreateCampaign, UpdateCampaign, SendCampaign, ListParams, SendTestParams, SendTestResult, SubjectVersionRequest } from '../types.js';
 import type { PaginatedResponse } from '../pagination.js';
 import { idempotencyHeader } from '../utils.js';
 
@@ -15,6 +15,16 @@ export class Campaigns extends Resource<Campaign, CreateCampaign, UpdateCampaign
     const { data } = await this.client.request<Campaign>('POST', `${this.path}/${id}/send`, {
       body: { ...params },
     });
+    return data;
+  }
+
+  /**
+   * Asks for suggested alternatives to the campaign's subject line, for its
+   * current content. Saving content already asks; use this when readiness
+   * reports none. Asking again for the same content changes nothing.
+   */
+  async requestSubjectVersions(id: number): Promise<SubjectVersionRequest> {
+    const { data } = await this.client.request<SubjectVersionRequest>('POST', `${this.path}/${id}/subject_versions`);
     return data;
   }
 

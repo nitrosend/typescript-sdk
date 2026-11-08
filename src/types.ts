@@ -281,6 +281,8 @@ export interface Campaign {
   trigger: FlowTrigger;
   template: Template;
   templates: Template[];
+  /** Present when the current send is a test of subject lines. */
+  experiment?: CampaignExperiment;
   createdAt: string;
   updatedAt: string;
 }
@@ -887,6 +889,59 @@ export interface SendCampaign {
   deliverAt?: string;
   /** Required when the persisted audience is all_contacts. */
   confirmSendToAll?: boolean;
+  /**
+   * Other subject lines to test against the campaign's own (version A, never
+   * listed). Two versions need 1,000 recipients, three 2,500, five 5,000, six 20,000.
+   */
+  versions?: CampaignVersionInput[];
+  /** Send the versions to a test part of the list, then the winner to the rest. Omit to split everyone. */
+  winner?: CampaignWinnerInput;
+}
+
+export interface CampaignVersionInput {
+  subject: string;
+  /** From a suggested line in the campaign's readiness `versions.lines`. */
+  generationEventId?: number;
+  candidateLocator?: string;
+}
+
+export interface CampaignWinnerInput {
+  /** Whole percent of the list in the test, from the minimum for the number of lines up to 95. */
+  testSharePercent: number;
+  waitHours?: 2 | 4 | 8 | 24;
+  measure?: 'opens' | 'clicks';
+}
+
+/** The test on a campaign's current send. Rates and the verdict appear once decided. */
+export interface CampaignExperiment {
+  id: number;
+  recipients?: number;
+  mode: 'split' | 'winner';
+  state: 'running' | 'awaiting_winner' | 'sending_winner' | 'complete' | 'stopped';
+  measure: 'opens' | 'clicks';
+  stopReason?: string;
+  testSharePercent?: number;
+  waitHours?: number;
+  decideAt?: string;
+  decidedAt?: string;
+  winnerSent?: number;
+  versions: {
+    key: number;
+    letter: string;
+    subject: string;
+    own: boolean;
+    writer: 'owner' | 'ai';
+    approach: string;
+    sent: number;
+    openRate?: number | null;
+    clickRate?: number | null;
+  }[];
+  verdict?: { rule: string; reason: string; winnerKey: number | null; chosenKey: number | null };
+}
+
+export interface SubjectVersionRequest {
+  status: 'none' | 'writing' | 'ready' | 'unavailable';
+  reason?: string;
 }
 
 export interface CreateFlow {
