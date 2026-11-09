@@ -935,6 +935,8 @@ export interface CampaignExperiment {
     sent: number;
     openRate?: number | null;
     clickRate?: number | null;
+    /** People who unsubscribed after this version was sent, by the horizon, over sent. */
+    unsubscribeRate?: number | null;
   }[];
   verdict?: { rule: string; reason: string; winnerKey: number | null; chosenKey: number | null };
 }
