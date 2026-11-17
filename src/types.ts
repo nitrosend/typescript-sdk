@@ -132,6 +132,16 @@ export interface Brand {
   emailTrackOpens: boolean;
   /** When false, this brand's links are not rewritten for click tracking. */
   emailTrackClicks: boolean;
+  /** When true (the default), campaign and flow links to the brand's own domains carry UTM tags. */
+  emailUtmTagging: boolean;
+  /** utm_source on tagged links. Default `nitrosend`. */
+  emailUtmSource: string;
+  /** utm_medium on tagged links. Default `email`. */
+  emailUtmMedium: string;
+  /** The brand's own list of tagged domains, or null for the automatic list. */
+  emailUtmDomains: string[] | null;
+  /** The domains whose links get UTM tags now (read-only). */
+  emailUtmEffectiveDomains: string[];
   fromEmailDomainStatus: 'blank' | 'verified' | 'unverified';
   effectiveFromEmail: string | null;
   effectiveReplyTo: string | null;
@@ -842,6 +852,11 @@ export interface CreateBrand {
   emailViewOnline?: boolean;
   emailTrackOpens?: boolean;
   emailTrackClicks?: boolean;
+  emailUtmTagging?: boolean;
+  emailUtmSource?: string;
+  emailUtmMedium?: string;
+  /** Null switches back to the automatic list (website and verified sending domains). */
+  emailUtmDomains?: string[] | null;
   testEmailRecipients?: string[];
   links?: BrandLink[];
   defaultHeader?: Record<string, unknown>;
