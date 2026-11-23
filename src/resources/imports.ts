@@ -6,6 +6,8 @@ import type {
   Import,
   ImportListParams,
   ImportSpec,
+  ImportSource,
+  ProviderImport,
 } from '../types.js';
 import type { PaginatedResponse } from '../pagination.js';
 
@@ -21,6 +23,28 @@ export class Imports extends Resource<Import, CreateImport, never> {
     const { data } = await this.client.request<ImportSpec>('GET', `${this.path}/spec`, {
       query: { resource },
     });
+    return data;
+  }
+
+  async listSources(): Promise<ImportSource[]> {
+    return (await this.spec()).sources ?? [];
+  }
+
+  async prepareProvider(params: {
+    provider: string;
+    destinationListId?: number;
+    idempotencyKey: string;
+  }): Promise<ProviderImport> {
+    const { idempotencyKey, ...body } = params;
+    const { data } = await this.client.request<ProviderImport>('POST', `${this.path}/provider`, {
+      headers: { 'Idempotency-Key': idempotencyKey },
+      body,
+    });
+    return data;
+  }
+
+  async getProvider(id: number): Promise<ProviderImport> {
+    const { data } = await this.client.request<ProviderImport>('GET', `${this.path}/${id}/provider`);
     return data;
   }
 

@@ -759,6 +759,42 @@ export interface ImportSpec {
   requiredRules: Record<string, unknown>;
   fields: Record<string, unknown>[];
   guardrails: ImportPolicy;
+  sources?: ImportSource[];
+}
+
+export interface ImportSource {
+  id: string;
+  moveOnce: boolean;
+  keepInSync: boolean;
+  export: boolean;
+  categories: string[];
+}
+
+export interface ProviderImport {
+  id: number;
+  provider: string;
+  sourceKind: 'provider';
+  resource: 'contacts';
+  status: Import['status'] | 'awaiting_connection' | 'awaiting_scope' | 'preparing' | 'ready_for_review';
+  reviewUrl: string;
+  statusUrl: string;
+  workspace?: { label: string };
+  destination: { name: string };
+  preview?: {
+    revision: string;
+    checkedAt: string;
+    counts: Record<string, number>;
+  };
+  result: {
+    totalRows: number | null;
+    successRows: number | null;
+    failedRows: number | null;
+    assignedLists: Array<{ id: number; name: string }>;
+    emailRows: (NonNullable<Import['emailRows']> & { unknown: number }) | null;
+    progress: Import['progress'];
+  };
+  nextAction: string;
+  errorCode?: string;
 }
 
 export interface Import {
