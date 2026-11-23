@@ -768,6 +768,8 @@ export interface ImportSource {
   keepInSync: boolean;
   export: boolean;
   categories: string[];
+  integration?: { id: number };
+  recentImport?: { id: number; status: ProviderImport['status'] };
 }
 
 export interface ProviderImport {

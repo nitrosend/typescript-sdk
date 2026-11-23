@@ -136,6 +136,28 @@ used as the alternative when `html` is set (HTML in `body` is escaped).
 
 \* Paginated — returns `{ data, pagination }`.
 
+## Move contacts from a platform
+
+Discover the methods supported for the brand bound to your API key. When a
+platform offers a one-time move, prepare the import with a stable idempotency
+key and give the user its review URL. They connect the source and approve the
+move in Nitrosend. The same import ID reports progress and the final counts.
+
+```typescript
+const sources = await nitro.imports.listSources();
+const mailchimp = sources.find((source) => source.id === 'mailchimp');
+
+if (mailchimp?.moveOnce) {
+  const migration = await nitro.imports.prepareProvider({
+    provider: mailchimp.id,
+    idempotencyKey: 'example-mailchimp-move-1',
+  });
+  console.log(migration.reviewUrl);
+  const current = await nitro.imports.getProvider(migration.id);
+  console.log(current.status, current.result.successRows);
+}
+```
+
 ## Image Media Assets
 
 Images used in templates and campaigns should be stored as URLs, not inline
