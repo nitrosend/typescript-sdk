@@ -143,6 +143,13 @@ platform offers a one-time move, prepare the import with a stable idempotency
 key and give the user its review URL. They connect the source and approve the
 move in Nitrosend. The same import ID reports progress and the final counts.
 
+`integrations.setupLink()` gives the person a link to connect a provider or
+choose a contact import method. It uses the account and brand of your API key.
+
+```typescript
+const { url } = await nitro.integrations.setupLink({ purpose: 'migrate', provider: 'klaviyo' });
+```
+
 ```typescript
 const sources = await nitro.imports.listSources();
 const mailchimp = sources.find((source) => source.id === 'mailchimp');

@@ -64,6 +64,26 @@ test('the generated version matches package.json', () => {
   assert.equal(VERSION, PACKAGE_VERSION);
 });
 
+test('integration setup returns the scoped browser link with a read-only request', async () => {
+  const link = {
+    purpose: 'migrate',
+    provider: 'klaviyo',
+    brand: { id: 4, name: 'Example' },
+    url: 'https://app.nitrosend.com/my/contacts/import?account_id=1&brand_id=4&migration_provider=klaviyo',
+  };
+  globalThis.fetch = async (input, init) => {
+    const url = new URL(String(input));
+    assert.equal(url.pathname, '/v1/my/integrations/setup_link');
+    assert.deepEqual(Object.fromEntries(url.searchParams), { purpose: 'migrate', provider: 'klaviyo' });
+    assert.equal(init?.method, 'GET');
+    assert.equal(init?.body, undefined);
+    assert.equal(new Headers(init?.headers).get('X-Brand-SID'), 'brand_4');
+    return new Response(JSON.stringify(link));
+  };
+  const ns = new Nitrosend({ apiKey: 'nskey_test_abc123', brandSid: 'brand_4' });
+  assert.deepEqual(await ns.integrations.setupLink({ purpose: 'migrate', provider: 'klaviyo' }), link);
+});
+
 test('inboxes keep the native API envelopes, server quote and retry identity', async () => {
   const requests: { url: string; method?: string; body: unknown; key: string | null }[] = [];
   globalThis.fetch = async (input, init) => {

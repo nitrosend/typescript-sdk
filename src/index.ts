@@ -13,6 +13,7 @@ import { Lists } from './resources/lists.js';
 import { Messages } from './resources/messages.js';
 import { Suppressions } from './resources/suppressions.js';
 import { Imports } from './resources/imports.js';
+import { Integrations } from './resources/integrations.js';
 import { Images } from './resources/images.js';
 import { Webhooks } from './resources/webhooks.js';
 
@@ -20,6 +21,7 @@ export { NitrosendError, BadRequestError, AuthenticationError, PaymentRequiredEr
 export type { PaginatedResponse, PaginationMeta } from './pagination.js';
 export { verifyWebhook, WebhookVerificationError, type VerifyWebhookOptions, type WebhookHeaders } from './webhook.js';
 export type * from './types.js';
+export type { IntegrationSetupLink } from './resources/integrations.js';
 export { VERSION } from './version.generated.js';
 
 export class Nitrosend {
@@ -37,6 +39,7 @@ export class Nitrosend {
   readonly messages: Messages;
   readonly suppressions: Suppressions;
   readonly imports: Imports;
+  readonly integrations: Integrations;
   readonly images: Images;
   readonly webhooks: Webhooks;
 
@@ -60,6 +63,7 @@ export class Nitrosend {
     this.messages = new Messages(client);
     this.suppressions = new Suppressions(client);
     this.imports = new Imports(client);
+    this.integrations = new Integrations(client);
     this.images = new Images(client);
     this.webhooks = new Webhooks(client);
   }
