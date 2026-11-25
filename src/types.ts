@@ -147,6 +147,8 @@ export interface Brand {
   effectiveReplyTo: string | null;
   effectiveSendingDomain: string | null;
   effectiveSourceEmail: string | null;
+  /** Why effectiveFromEmail differs from emailFromEmail, and what to do, or null (read-only). */
+  effectiveFromEmailNote: string | null;
   senderConfigured: boolean;
   testEmailRecipients: string[];
   brandDocument: string | null;
